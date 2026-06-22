@@ -8,7 +8,7 @@ the output's ``grad`` to 1, and walks the nodes in reverse, calling each
 ``d(loss)/d(node)`` — automatic differentiation, complete for scalars.
 
 This is the micrograd ``Value.backward``. Later stages reuse it unchanged
-(stage_06 only adds more ops; stage_09 lifts the same algorithm to arrays).
+(stage_05 only adds more ops; stage_08 lifts the same algorithm to arrays).
 Allowed tools: Python stdlib only.
 """
 

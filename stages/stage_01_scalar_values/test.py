@@ -12,7 +12,7 @@ hand-derived derivative against. Instead, the final tests use the symmetric
 CENTRAL DIFFERENCE
     f'(x) ~= (f(x + h) - f(x - h)) / (2h)
 to confirm that derivatives of `Value` expressions exist and match the slope we
-expect (e.g. d/da (a*b) = b). From stage 06 on, this same central-difference
+expect (e.g. d/da (a*b) = b). From stage 05 on, this same central-difference
 recipe becomes the gradient check against your analytic `.backward()`.
 """
 

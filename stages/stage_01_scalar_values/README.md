@@ -1,8 +1,8 @@
 # Stage 01: Scalar values & arithmetic
 
-**Cumulative chain** — This is the ORIGIN stage: it imports nothing from earlier stages (there are none). It exports the base `Value`, which every later stage extends via `dlfs.stage_import` — stage 02 subclasses it to add the computational graph (`_prev`/`_op`), stage 06 subclasses again to add `.backward()`.
+**Cumulative chain** — This is the ORIGIN stage: it imports nothing from earlier stages (there are none). It exports the base `Value`, which every later stage extends via `dlfs.stage_import` — stage 02 subclasses it to add the computational graph (`_prev`/`_op`), stage 05 subclasses again to add `.backward()`.
 
-**Context** — This is the first stage of the whole curriculum and the seed of the autodiff engine you will build. You wrap a single floating-point number in a `Value` object and teach it to do arithmetic (`+`, `-`, `*`, `/`) through Python operator overloading. There are **no gradients yet** — that machinery (`.backward()` filling `grad`) arrives in stage 06, and there is **no computational graph yet** — that arrives in stage 02. Here you only build the object and the forward math, plus the conceptual foundation of variables, functions, and derivatives.
+**Context** — This is the first stage of the whole curriculum and the seed of the autodiff engine you will build. You wrap a single floating-point number in a `Value` object and teach it to do arithmetic (`+`, `-`, `*`, `/`) through Python operator overloading. There are **no gradients yet** — that machinery (`.backward()` filling `grad`) arrives in stage 05, and there is **no computational graph yet** — that arrives in stage 02. Here you only build the object and the forward math, plus the conceptual foundation of variables, functions, and derivatives.
 
 **Background** — A neural network is just one enormous differentiable function built by composing tiny operations. To differentiate it automatically, we first need a data type we control at every step, instead of bare Python floats. A `Value` stores one number in `self.data`. Overloading `__add__`, `__mul__`, etc. lets `a + b` and `a * b` return *new* `Value`s, so expressions like `d = a * b + c` compose into the forward computation. The next stage (02) will subclass this `Value` to also record the operands and operation of each result — the skeleton of the computational graph — but here the result is just the number. The derivative is the foundation: for a function $f$, the derivative measures sensitivity of the output to a tiny change in an input,
 
@@ -16,7 +16,7 @@ $$
 f'(x) \approx \frac{f(x+h) - f(x-h)}{2h}.
 $$
 
-You will *not* derive analytic gradients in this stage — you only verify, numerically, that derivatives of your `Value` expressions exist and behave (e.g. $\frac{d}{da}(a b) = b$). Everything later (the computational graph in stage 02, the `Value` autodiff engine in stage 06) builds on the class and forward ops you write here.
+You will *not* derive analytic gradients in this stage — you only verify, numerically, that derivatives of your `Value` expressions exist and behave (e.g. $\frac{d}{da}(a b) = b$). Everything later (the computational graph in stage 02, the `Value` autodiff engine in stage 05) builds on the class and forward ops you write here.
 
 **Watch**
 

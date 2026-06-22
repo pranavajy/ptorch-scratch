@@ -14,7 +14,7 @@ The canonical check: `a=Value(2); b=Value(3); c=a*b; d=c+a; d.backward()` gives 
 - [What is backpropagation really doing? (3Blue1Brown)](https://www.youtube.com/watch?v=Ilg3gGewQ5U) — visual intuition for chaining local derivatives backward.
 - [The spelled-out intro to backpropagation (Andrej Karpathy)](https://www.youtube.com/watch?v=VMj-3S1tku0) — he writes this exact topo-sort + reverse `_backward` loop.
 
-**Cumulative build** — Imports `Value` from `stage_03` via `dlfs.stage_import` and SUBCLASSES it. It inherits `data`/`grad`/`_prev`/`_op`/`_backward` and the gradient-installing `__add__`/`__mul__`/`__pow__` (and the derived ops). It ADDS only the module-level `topo_sort(root)` and the `backward()` method. After this stage `Value` is a complete scalar autodiff engine; stage_06 only adds more primitive ops on top.
+**Cumulative build** — Imports `Value` from `stage_03` via `dlfs.stage_import` and SUBCLASSES it. It inherits `data`/`grad`/`_prev`/`_op`/`_backward` and the gradient-installing `__add__`/`__mul__`/`__pow__` (and the derived ops). It ADDS only the module-level `topo_sort(root)` and the `backward()` method. After this stage `Value` is a complete scalar autodiff engine; stage_05 only adds more primitive ops on top.
 
 **Exercise** — In `code.py`, subclass the `stage_03` `Value`:
 - `topo_sort(root)` — return every node reachable from `root` in topological order (dependencies first), each node exactly once, terminating on reused nodes. Use a `visited` set and DFS **post-order** over `_prev` (append a node only after recursing into all its parents).

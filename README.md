@@ -20,47 +20,46 @@ Implement `code.py` until the tests pass:
 pytest stage_xx/test.py
 ```
 
-Each stage builds on the code from prior stages (e.g. `Value` from `stage_06`, `Tensor` from `stage_11`).
+Each stage builds on the code from prior stages (e.g. `Value` from `stage_05`, `Tensor` from `stage_08`).
 
-## The 35 stages
+## The 34 stages
 
 | # | Stage | What you build |
 |---|-------|----------------|
-| 01 | Numerical Derivatives | Finite-difference gradients; the limit definition of a derivative. |
-| 02 | The Chain Rule | Compose derivatives by hand; manual forward/backward on small functions. |
-| 03 | Computational Graphs | Represent expressions as DAGs of operations. |
-| 04 | Manual Backprop | Hand-code reverse passes through a fixed graph. |
-| 05 | Topological Sort | Order nodes for correct gradient accumulation. |
-| 06 | The `Value` Scalar Engine | Autodiff over scalars with `+`, `*`, `tanh`, `.backward()`. |
-| 07 | More Scalar Ops | `exp`, `log`, `pow`, division, ReLU, broadcasting of scalars. |
-| 08 | A Scalar Neuron & MLP | Wire `Value`s into neurons, layers, and a tiny MLP. |
-| 09 | Loss & Manual SGD | MSE/cross-entropy on `Value`; hand-rolled gradient descent. |
-| 10 | Vectorizing with NumPy | Move from scalars to arrays; why scalar graphs don't scale. |
-| 11 | The `Tensor` Engine | N-dim autodiff tensor with grad tracking and `.backward()`. |
-| 12 | Broadcasting Backward | Correct gradient reduction across broadcast dimensions. |
-| 13 | Matmul & Reductions | `@`, `sum`, `mean`, `max` with their backward rules. |
-| 14 | Activations | ReLU, Sigmoid, Tanh, GELU as autodiff ops. |
-| 15 | Linear Layer & `Module` | `Parameter`, `Module` base class, `nn.Linear`. |
-| 16 | Softmax & Cross-Entropy | Numerically stable softmax + its fused gradient. |
-| 17 | Training Loop | Forward, backward, zero-grad, step on a real dataset. |
-| 18 | Optimizers | SGD+momentum, RMSProp, Adam, weight decay. |
-| 19 | Initialization | Xavier/Glorot, He init, and why scale matters. |
-| 20 | Regularization | Dropout and L2; train vs eval mode. |
-| 21 | BatchNorm | Batch normalization forward + backward by hand. |
-| 22 | LayerNorm | Layer normalization and its gradients. |
-| 23 | Convolution | `Conv2d` via im2col with full backward. |
-| 24 | Pooling | Max/average pooling forward and backward. |
-| 25 | A CNN Classifier | Stack conv/pool/linear; train on image data. |
-| 26 | Embeddings & Tokenizer | Embedding lookup + gradients; a byte/char tokenizer. |
-| 27 | RNN | Vanilla recurrent cell and backprop-through-time. |
-| 28 | Self-Attention | Scaled dot-product attention forward + backward. |
-| 29 | Multi-Head Attention | Split/concat heads; the full MHA module. |
-| 30 | Positional Encoding | Sinusoidal and learned position embeddings. |
-| 31 | Transformer Block | Residuals, LayerNorm, FFN; a full encoder/decoder block. |
-| 32 | A GPT-style Transformer | Causal masking; train a small char-level language model. |
-| 33 | Vision Transformer | Patch embeddings + Transformer for image classification. |
-| 34 | The Mini-Framework | Package it all into a clean PyTorch-like API. |
-| 35 | Capstones | End-to-end projects: GPT, ViT, or your own architecture. |
+| 01 | Scalar Values | `Value`: wrap one number; forward arithmetic via operator overloading. |
+| 02 | Computational Graph | Record each result's parents (`_prev` set), op (`_op`), and a no-op `_backward` hook. |
+| 03 | Local Derivatives | Install per-op `_backward` closures (the local-derivative push). |
+| 04 | Chain Rule | `backward()`: topological sort + seed grad=1 + reverse-walk the closures. |
+| 05 | Backprop Engine | Add `tanh`, `exp`, `relu` on the scalar `Value`; the complete micrograd engine. |
+| 06 | Vector Operations | A `Vec` container of `Value`s: elementwise ops, `dot`, `sum`. |
+| 07 | Matrix Operations | A `Mat` of `Value`s: `matmul`/`@`, transpose, reshape, sum, mean. |
+| 08 | Tensor Engine | Collapse scalar graphs onto one N-dim NumPy-backed autodiff `Tensor`. |
+| 09 | Neuron | A single learnable neuron `y = phi(x @ w + b)` on the `Tensor`. |
+| 10 | Dense Layer | Vectorized fully-connected layer `Z = X @ W + b`. |
+| 11 | MLP | Stack `Dense` layers with activations between them. |
+| 12 | Loss Functions | MSE/MAE/cross-entropy (+ stable softmax) and `sum`/`mean` reductions. |
+| 13 | SGD Optimizer | The `Optimizer`/`SGD` update step abstraction. |
+| 14 | First Training Loop | Wire MLP + loss + SGD into the canonical learn loop. |
+| 15 | Weight Initialization | Xavier/Glorot and He/Kaiming init, and why scale matters. |
+| 16 | Momentum | SGD with momentum. |
+| 17 | Adam | RMSProp/Adam with bias correction and weight decay. |
+| 18 | Batch Training | Minibatching, epochs, shuffling; gradient-variance intuition. |
+| 19 | DataLoader | `Dataset`/`DataLoader` batching abstraction. |
+| 20 | Regularization | L2 / weight decay; train vs eval mode. |
+| 21 | Dropout | Dropout forward + backward; inverted scaling. |
+| 22 | BatchNorm | Batch normalization forward + backward by hand. |
+| 23 | Conv2D Math | Convolution arithmetic and gradients via im2col. |
+| 24 | Conv2D Implementation | `Conv2D`/pooling/flatten as `Tensor` layers. |
+| 25 | CNN Project | Stack conv/pool/linear; train on image data. |
+| 26 | Attention Math | Scaled dot-product attention forward + backward (pure NumPy). |
+| 27 | Self-Attention | Self-attention on the `Tensor` autodiff engine. |
+| 28 | Multi-Head Attention | Split/concat heads; the full MHA module. |
+| 29 | Transformer | Residuals + LayerNorm + FFN; a full Transformer block. |
+| 30 | Vision Transformer | Patch embeddings + Transformer for image classification. |
+| 31 | Framework Refactor | Package it all into a clean PyTorch-like `Module`/`Parameter` API. |
+| 32 | Capstone: MNIST | End-to-end MNIST classifier. |
+| 33 | Capstone: CIFAR-10 | End-to-end CIFAR-10 classifier. |
+| 34 | Capstone: Transformer | End-to-end Transformer language model. |
 
 ## Expected effort
 
