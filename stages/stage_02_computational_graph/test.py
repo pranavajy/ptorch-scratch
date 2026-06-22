@@ -90,6 +90,7 @@ def test_number_coercion_and_reflected_ops():
 def test_leaf_has_empty_graph():
     a = Value(1.0)
     assert a._prev == set(), "a leaf must have no parents"
+    assert a._inputs == (), "a leaf must have no operand-ordered inputs"
     assert a._op == "", "a leaf must have empty _op"
     assert a.grad == 0.0, "grad must default to 0.0"
 
@@ -99,6 +100,7 @@ def test_add_records_parents_and_op():
     out = a + b
     assert out._op == "+", "add result must have _op == '+'"
     assert out._prev == {a, b}, "add result must record both operands as parents"
+    assert out._inputs == (a, b), "add result must keep operands in left,right order"
 
 
 def test_mul_records_parents_and_op():
@@ -106,6 +108,16 @@ def test_mul_records_parents_and_op():
     out = a * b
     assert out._op == "*", "mul result must have _op == '*'"
     assert out._prev == {a, b}, "mul result must record both operands as parents"
+    assert out._inputs == (a, b), "mul result must keep operands in left,right order"
+
+
+def test_inputs_preserve_operand_order():
+    # _prev is an unordered set; _inputs is the operand-ordered tuple later
+    # stages recover left vs. right from (needed for asymmetric '-' / '/').
+    a, b = Value(7.0), Value(2.0)
+    out = a + b
+    assert out._inputs == (a, b), "left operand must come first in _inputs"
+    assert out._inputs[0] is a and out._inputs[1] is b, "order must be (left, right)"
 
 
 def test_coerced_operand_becomes_value_parent():
@@ -125,6 +137,7 @@ def test_self_reuse_dedups_in_prev():
     assert out.data == 9.0, "a*a forward value incorrect"
     assert out._prev == {a}, "a*a must store a single parent (set dedup)"
     assert len(out._prev) == 1
+    assert out._inputs == (a, a), "a*a must keep BOTH operand slots in _inputs (no dedup)"
 
 
 # --------------------------------------------------------------------------
