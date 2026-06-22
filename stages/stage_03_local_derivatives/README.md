@@ -1,33 +1,33 @@
-# Stage 3: Local derivatives
+# Stage 3: Local derivatives as `_backward` closures
 
-**Context** — In stage_02 you built a *computational graph*: every expression became a DAG of `Value` nodes, each node remembering its op (`_op`) and its input nodes. That graph stored only forward *values*. This stage attaches the missing half of backprop: for every op, the **local derivative** of the node's output with respect to each of its inputs. These local derivatives are the per-edge factors the chain rule will later multiply together (stage_04 manual backprop, stage_06 the `Value` engine). No global backward pass yet — just one honest derivative per edge.
+**Context** — In stage_02 you built a *computational graph*: every result `Value` remembers its op (`_op`), its parents (`_prev`), and reserves a no-op `_backward` hook. This stage fills that hook in. For every op you install a small **closure** on the result node that, given the output's gradient, pushes the *local* derivative onto each input's `grad`. This is the per-edge half of backprop. There is still **no** global pass that runs the closures in order — that is stage_04's `backward()`. Here you only make each edge know how to push gradient one step.
 
-**Background** — A node $z = f(a, b)$ has a *local derivative* with respect to each input, evaluated at the current forward values. By the chain rule, an upstream gradient $\bar z = \partial L / \partial z$ flows to each input as $\bar a = \bar z \cdot \partial z / \partial a$. So if we can produce $\partial z / \partial a$ for every op, backprop is just "multiply and accumulate." Derive the three core rules by hand:
+**Background** — A node $z = f(a, b)$ has a *local derivative* with respect to each input, evaluated at the current forward values. By the chain rule, the output's gradient $g = \partial L / \partial z$ flows to each input as $\partial L/\partial a = g \cdot \partial z/\partial a$. So if every op's result node carries a closure that does exactly that push, a later reverse walk just calls the closures in the right order. Derive the rules by hand:
 $$z = a + b \;\Rightarrow\; \frac{\partial z}{\partial a} = 1,\quad \frac{\partial z}{\partial b} = 1$$
 $$z = a \cdot b \;\Rightarrow\; \frac{\partial z}{\partial a} = b,\quad \frac{\partial z}{\partial b} = a$$
-$$z = a / b \;\Rightarrow\; \frac{\partial z}{\partial a} = \frac{1}{b},\quad \frac{\partial z}{\partial b} = -\frac{a}{b^{2}}$$
-Note division is *not* symmetric, and every local derivative is evaluated at the stored forward values of `a` and `b` — that is why stage_02 kept the values around (and why it stored the operand-ordered `_inputs` tuple, not just the unordered `_prev` set: for `/` you must know which input is the numerator). Also handle the unary negation $z = -a \Rightarrow \partial z/\partial a = 1\cdot(-1) = -1$ and subtraction $z = a - b \Rightarrow (1, -1)$, since they reduce to add/mul. Local derivatives are purely *local*: they ignore the rest of the graph, which is exactly what makes the chain rule modular.
+$$z = a^{c}\ (c\ \text{const}) \;\Rightarrow\; \frac{\partial z}{\partial a} = c\,a^{c-1}$$
+The closure accumulates with `+=`, never `=`: a node reused in several places (e.g. `a * a`, or `a` feeding two branches) must *sum* the gradient it receives from every consumer. That `+=` is the whole reason the reverse pass is correct for graphs, not just chains.
+
+The asymmetric ops need **no operand-order bookkeeping** on the node. `a - b` is `a + (-b)` and `a / b` is `a * b**-1` — they compose out of `+`, `*`, `**`, which are *inherited from stage_01*. Because each closure **captures its own operands** (`self` and `other`) directly, `a / b` knows which side is the numerator without the node storing order. This is why stage_02's `_prev` could be an unordered set. (Division's $\partial z/\partial a = 1/b$, $\partial z/\partial b = -a/b^2$ falls out automatically from the `*` and `**` closures composed.)
 
 **Watch**
 - [The Chain Rule (Backpropagation calculus)](https://www.youtube.com/watch?v=tIeHLnjs5U8) — 3Blue1Brown: how local derivatives chain edge-by-edge through a graph.
-- [The spelled-out intro to neural networks and backpropagation: building micrograd](https://www.youtube.com/watch?v=VMj-3S1tku0) — Karpathy: the same per-op local-derivative idea you are encoding here.
+- [The spelled-out intro to neural networks and backpropagation: building micrograd](https://www.youtube.com/watch?v=VMj-3S1tku0) — Karpathy: he installs exactly these `_backward` closures op by op.
 
-**Cumulative** — Imports `Value` from `stage_02` via `dlfs.stage_import` (no new `Value` class); ADDS the per-op local-derivative functions and the `local_derivatives(node)` dispatcher that reads `node._op` on top of it.
+**Cumulative** — Imports `Value` from `stage_02` via `dlfs.stage_import` and SUBCLASSES it. It overrides `__add__`, `__mul__`, `__pow__` so each builds its result node (as in stage_02) **and** sets `out._backward` to the local-derivative closure. The derived ops (`__neg__`/`__sub__`/`__truediv__`, inherited from stage_01) compose out of those three, so they get correct gradients for free. No global `backward()` yet.
 
-**Exercise** — In `code.py`, build on the imported `stage_02` `Value` graph. Implement local-derivative functions, one per op, each returning the partials **with respect to every input**, evaluated at the inputs' forward values:
-- `d_add(a, b) -> tuple[float, float]` returns `(1.0, 1.0)`.
-- `d_sub(a, b) -> tuple[float, float]` returns `(1.0, -1.0)`.
-- `d_mul(a, b) -> tuple[float, float]` returns `(b, a)`.
-- `d_div(a, b) -> tuple[float, float]` returns `(1/b, -a/b**2)`; raise `ZeroDivisionError` if `b == 0`.
-- `d_neg(a) -> tuple[float]` returns `(-1.0,)`.
-- `local_derivatives(node) -> tuple[float, ...]` — the dispatcher: read `node._op` (the stage_02 `Value` op label), take the operand-ordered parents from `node._inputs` (stage_02 keeps that tuple precisely because `_prev` is an unordered set and `-`/`/` need left vs. right), pull each input's stored forward value (`.data`), call the matching `d_*`, and return the tuple of local derivatives in operand order. Constant/leaf nodes (op `""`) return `()`.
-- Inputs are Python floats (or the forward values held by `Value`s); outputs are plain `float`s in a tuple, one per input, in input order.
-- Allowed: Python stdlib only. No NumPy needed; no autodiff libraries.
-- Acceptance: each `d_*` matches its hand-derived rule, `local_derivatives` dispatches correctly for `+ - * / neg` and returns `()` for leaves, and every analytical partial agrees with a central-difference estimate.
+**Exercise** — In `code.py`, subclass the `stage_02` `Value` and install `_backward` closures:
+- `__add__(self, other)`: coerce a number operand to `Value`; build `out = Value(self.data + other.data, (self, other), '+')`; set `out._backward` to a closure doing `self.grad += out.grad; other.grad += out.grad`.
+- `__mul__(self, other)`: build the `'*'` node; closure does `self.grad += other.data * out.grad; other.grad += self.data * out.grad`.
+- `__pow__(self, c)`: assert `c` is an int/float constant; build the `f'**{c}'` node; closure does `self.grad += (c * self.data ** (c - 1)) * out.grad`.
+- Do **not** re-implement `__neg__`/`__sub__`/`__rsub__`/`__truediv__`/`__rtruediv__` — they are inherited and compose out of the three above, so their gradients flow through your closures.
+- `__repr__`: `Value(data=..., grad=...)`.
+- The closures must use `+=` (accumulate), never `=`.
+- Allowed: Python stdlib only. No NumPy, no autodiff libraries.
 
 **Done when**
 - [ ] `pytest stage_03_local_derivatives/test.py` passes.
-- [ ] All five `d_*` functions return the hand-derived partials in input order.
-- [ ] `local_derivatives` dispatches on `node._op` and returns `()` for leaf nodes.
-- [ ] `d_div(a, 0)` raises `ZeroDivisionError`.
-- [ ] Every analytical partial matches central differences within `tol = 1e-6`.
+- [ ] Seeding a result node's `.grad` and calling `node._backward()` once pushes the correct local derivative onto each operand (`+` → `(g, g)`; `*` → `(b·g, a·g)`; `**c` → `c·a^{c-1}·g`).
+- [ ] `a * a`'s closure accumulates `2a` onto the shared operand (`+=`, not `=`).
+- [ ] A leaf's inherited `_backward` is a no-op that changes no grad.
+- [ ] `a ** Value(...)` is rejected (powers must be constant).

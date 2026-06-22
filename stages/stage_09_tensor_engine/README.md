@@ -11,7 +11,7 @@ imports this `Tensor`.
 accumulated $\partial L / \partial \text{self}$). Each non-leaf tensor remembers the `_prev` tensors it
 was built from, the `_op` name, and a local `_backward` closure that knows how to push gradient to
 those parents. This is identical in spirit to `Value`, but the chain rule now runs on whole arrays at
-once. `.backward()` builds a topological order of the graph (the algorithm from stage_05), seeds the
+once. `.backward()` builds a topological order of the graph (the algorithm from stage_04), seeds the
 output gradient with ones, and walks nodes in reverse, calling each `_backward`. Gradients
 **accumulate** with `+=` because a tensor used in several places receives gradient from each.
 

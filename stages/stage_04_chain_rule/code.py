@@ -1,62 +1,66 @@
-"""Stage 4: Chain rule.
+"""Stage 4: The backward pass.
 
-Manually propagate derivatives through multi-op expressions by composing the
-*local* derivatives from stage_03. No autodiff engine here -- plain floats with
-explicit forward/backward code. Derivatives must be analytical (compose the
-stage_03 locals); do NOT use finite differences. Skeleton only.
+stage_03 gave every result node a ``_backward`` closure that pushes the local
+derivative one edge. This stage adds the **global** reverse pass that runs those
+closures in the right order: ``backward()`` topologically sorts the graph, seeds
+the output's ``grad`` to 1, and walks the nodes in reverse, calling each
+``_backward``. After ``loss.backward()`` every node's ``.grad`` holds
+``d(loss)/d(node)`` — automatic differentiation, complete for scalars.
+
+This is the micrograd ``Value.backward``. Later stages reuse it unchanged
+(stage_06 only adds more ops; stage_09 lifts the same algorithm to arrays).
+Allowed tools: Python stdlib only.
 """
 
 from __future__ import annotations
 
-import math
-from typing import Dict, List
+from typing import List, Set
 
 from dlfs import stage_import
 
-# Reuse: graph node from stage_02, per-op local derivatives from stage_03.
-Stage2_Value = stage_import("stage_02", "Value")
-Stage3_d_add, Stage3_d_mul = stage_import("stage_03", "d_add", "d_mul")
+# stage_03 Value: graph node whose ops install per-edge `_backward` closures.
+Stage3_Value = stage_import("stage_03", "Value")
 
 
-def chain(locals_list: List[float]) -> float:
-    """Chain rule along a single straight path: product of local derivatives.
+class Value(Stage3_Value):
+    """stage_03 `Value` plus a global ``backward()`` reverse pass.
 
-    For ``x -> u -> ... -> y``, dy/dx is the product of the consecutive locals.
-    Empty list returns 1.0 (multiplicative identity).
+    Inherits ``data``/``grad``/``_prev``/``_op``/``_backward`` and the
+    gradient-installing ``__add__``/``__mul__``/``__pow__`` (and the derived
+    ops). Adds only the topological reverse walk.
     """
-    raise NotImplementedError("TODO: multiply the local derivatives; empty -> 1.0")
+
+    def backward(self) -> None:
+        """Run reverse-mode autodiff with ``self`` as the output (loss).
+
+        (1) Build a topological order of every node reachable from ``self``
+            (parents before children) via DFS post-order over ``_prev``.
+        (2) Seed ``self.grad = 1.0`` (d(self)/d(self) = 1).
+        (3) Walk the order in REVERSE, calling each node's ``_backward`` so
+            gradients flow from the output back to every leaf. Closures use
+            ``+=``, so reused nodes accumulate correctly.
+
+        Does not zero grads first; callers zero between passes if needed.
+        """
+        # TODO: topo = topo_sort(self); self.grad = 1.0;
+        # for v in reversed(topo): v._backward()
+        raise NotImplementedError("stage_04: implement backward()")
 
 
-def accumulate(path_derivs: List[float]) -> float:
-    """Multivariate chain rule: sum the per-path total derivatives.
+def topo_sort(root: "Value") -> List["Value"]:
+    """Return nodes reachable from ``root`` in topological order.
 
-    When one input reaches the output via several paths, dy/dx is their sum.
-    Empty list returns 0.0.
+    Dependencies first (a parent appears before any child that uses it); the
+    backward pass walks this list in reverse. Each node is emitted exactly once
+    even when the graph is a DAG with reused nodes (use a ``visited`` set).
     """
-    raise NotImplementedError("TODO: sum the per-path derivatives; empty -> 0.0")
+    order: List["Value"] = []
+    visited: Set["Value"] = set()
 
+    def build(v: "Value") -> None:
+        # TODO: if v not in visited: add v; recurse into each child in v._prev;
+        # then append v to order (post-order)
+        raise NotImplementedError("stage_04: implement the DFS post-order build")
 
-def f_chain(x: float) -> tuple[float, float]:
-    """Straight chain: u = 3x + 1, v = u**2, y = tanh(v). Returns (y, dy/dx).
-
-    Backward multiplies the three locals (use ``chain``). Analytical only.
-    """
-    raise NotImplementedError("TODO: forward pass for y, backward pass for dy/dx")
-
-
-def f_branch(x: float) -> tuple[float, float]:
-    """Branching: a = x + 1, b = x**2, y = a * b. Returns (y, dy/dx).
-
-    ``x`` feeds both branches, so dy/dx sums over two paths (use ``accumulate``).
-    Analytical only.
-    """
-    raise NotImplementedError("TODO: forward pass, then sum-over-paths backward")
-
-
-def backward_pass(x: float) -> Dict[str, float]:
-    """Full manual reverse pass over f_branch (a = x+1, b = x**2, y = a*b).
-
-    Seed dy/dy = 1.0 and propagate backward, accumulating at ``x``. Returns
-    {"y","a","b","x"} -> d(output)/d(node); "x" must equal f_branch(x)[1].
-    """
-    raise NotImplementedError("TODO: build the {name: derivative} reverse-pass dict")
+    # TODO: build(root); return order
+    raise NotImplementedError("stage_04: implement topo_sort")

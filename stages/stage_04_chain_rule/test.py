@@ -1,21 +1,18 @@
-"""Tests for Stage 4: Chain rule.
+"""Tests for Stage 4: The backward pass.
 
-Run with:  pytest stage_04_chain_rule/test.py
+``backward()`` runs reverse-mode autodiff: topo-sort, seed the output grad to 1,
+walk in reverse calling each node's ``_backward``. After ``out.backward()`` every
+node's ``.grad`` is ``d(out)/d(node)``. We check the canonical micrograd cases
+(accumulation over reused nodes, shared subexpressions) and gradcheck against
+central differences.
 
-These run against this stage's ``code.py``, which reuses ``Value`` (stage_02)
-and the ``d_*`` locals (stage_03) via ``dlfs.stage_import`` and ADDS the
-chain-rule plumbing on top -- so the cumulative framework is exercised.
-
-Gradient checks use central differences (f(x+eps) - f(x-eps)) / (2*eps) and
-compare against the ANALYTICAL derivative your code returns. NumPy is used only
-to build/compare the numerical reference; your code must not use it.
+Run: pytest stage_04_chain_rule/test.py
 """
 import os as _os
 import sys as _sys
 
 import math
 
-import numpy as np
 import pytest
 
 # --- resolve sibling code.py (avoid stdlib `code` collision) ---
@@ -24,170 +21,126 @@ _THIS_DIR = _os.path.dirname(_os.path.abspath(__file__))
 _ROOT = _os.path.dirname(_THIS_DIR)
 if _ROOT not in _sys.path:
     _sys.path.insert(0, _ROOT)
-_spec = _ilu.spec_from_file_location(
-    "code", _os.path.join(_THIS_DIR, "code.py")
-)
+_spec = _ilu.spec_from_file_location("code", _os.path.join(_THIS_DIR, "code.py"))
 _mod = _ilu.module_from_spec(_spec)
 _sys.modules["code"] = _mod
 _spec.loader.exec_module(_mod)
-from code import (
-    accumulate,
-    backward_pass,
-    chain,
-    f_branch,
-    f_chain,
-)
+from code import Value, topo_sort
 
 TOL = 1e-5
 EPS = 1e-6
 
 
-def central_diff(value_fn, x, eps=EPS):
-    """Numerical derivative of a scalar->scalar function via central differences."""
-    return (value_fn(x + eps) - value_fn(x - eps)) / (2.0 * eps)
+def central_diff(f, x, eps=EPS):
+    """Numerical derivative of scalar f at scalar x via central differences."""
+    return (f(x + eps) - f(x - eps)) / (2.0 * eps)
 
 
 # ---------------------------------------------------------------------------
-# chain: product of locals along a straight path
+# topo_sort: dependencies before dependents, each node once
 # ---------------------------------------------------------------------------
-
-def test_chain_product():
-    assert chain([2.0, 3.0, 4.0]) == pytest.approx(24.0)
-
-
-def test_chain_single():
-    assert chain([7.5]) == pytest.approx(7.5)
-
-
-def test_chain_empty_is_identity():
-    assert chain([]) == pytest.approx(1.0), "empty chain must return 1.0"
-
-
-def test_chain_with_zero():
-    assert chain([5.0, 0.0, 9.0]) == pytest.approx(0.0)
+def test_topo_sort_orders_parents_before_children():
+    a, b = Value(2.0), Value(3.0)
+    c = a * b
+    d = c + a
+    order = topo_sort(d)
+    assert set(order) == {a, b, c, d}, "topo must include every reachable node"
+    assert len(order) == len(set(order)), "each node exactly once"
+    pos = {v: i for i, v in enumerate(order)}
+    assert pos[a] < pos[c] and pos[b] < pos[c], "parents of c before c"
+    assert pos[c] < pos[d] and pos[a] < pos[d], "parents of d before d"
 
 
-def test_chain_order_independent():
-    assert chain([1.5, -2.0, 4.0]) == pytest.approx(chain([4.0, 1.5, -2.0]))
-
-
-# ---------------------------------------------------------------------------
-# accumulate: sum over merging paths
-# ---------------------------------------------------------------------------
-
-def test_accumulate_sum():
-    assert accumulate([1.0, 2.0, 3.0]) == pytest.approx(6.0)
-
-
-def test_accumulate_empty_is_zero():
-    assert accumulate([]) == pytest.approx(0.0), "empty accumulate must return 0.0"
-
-
-def test_accumulate_negatives():
-    assert accumulate([5.0, -2.0, -1.0]) == pytest.approx(2.0)
+def test_topo_sort_terminates_on_reuse():
+    a = Value(3.0)
+    out = a * a
+    order = topo_sort(out)
+    assert set(order) == {a, out}
+    assert len(order) == 2
 
 
 # ---------------------------------------------------------------------------
-# f_chain: straight chain u = 3x+1, v = u^2, y = tanh(v)
+# backward: seeds output grad = 1
 # ---------------------------------------------------------------------------
-
-def _f_chain_value(x):
-    u = 3.0 * x + 1.0
-    v = u * u
-    return math.tanh(v)
-
-
-@pytest.mark.parametrize("x", [-1.3, -0.4, 0.0, 0.2, 0.7])
-def test_f_chain_value_matches_forward(x):
-    y, _ = f_chain(x)
-    assert y == pytest.approx(_f_chain_value(x), abs=1e-9)
+def test_backward_seeds_output_with_one():
+    a, b = Value(2.0), Value(3.0)
+    out = a * b
+    out.backward()
+    assert out.grad == pytest.approx(1.0)
 
 
-@pytest.mark.parametrize("x", [-1.3, -0.4, 0.0, 0.2, 0.7])
-def test_f_chain_gradcheck(x):
-    _, dy_dx = f_chain(x)
-    num = central_diff(_f_chain_value, x)
-    assert dy_dx == pytest.approx(num, abs=TOL, rel=1e-4), (
-        f"f_chain dy/dx at x={x}: analytical={dy_dx}, numerical={num}"
+def test_backward_simple_mul():
+    a, b = Value(2.0), Value(3.0)
+    out = a * b
+    out.backward()
+    assert a.grad == pytest.approx(3.0)   # d(ab)/da = b
+    assert b.grad == pytest.approx(2.0)   # d(ab)/db = a
+
+
+# ---------------------------------------------------------------------------
+# the canonical micrograd accumulation case
+#   a=2, b=3, c=a*b, d=c+a, d.backward()  ->  a.grad==4, b.grad==2
+# ---------------------------------------------------------------------------
+def test_backward_accumulates_over_two_paths():
+    a, b = Value(2.0), Value(3.0)
+    c = a * b
+    d = c + a
+    d.backward()
+    assert a.grad == pytest.approx(4.0), "a reaches d via c (b=3) and directly (1) -> 4"
+    assert b.grad == pytest.approx(2.0)
+
+
+def test_backward_self_mul():
+    a = Value(3.0)
+    out = a * a            # d/da (a^2) = 2a = 6
+    out.backward()
+    assert a.grad == pytest.approx(6.0)
+
+
+def test_backward_shared_subexpression():
+    a = Value(3.0)
+    b = a + 1.0            # 4
+    c = a * 2.0            # 6
+    out = b * c            # 24 ; d/da = (a+1)*2 + 2a = 4a+2 = 14
+    out.backward()
+    assert a.grad == pytest.approx(14.0)
+
+
+# ---------------------------------------------------------------------------
+# gradcheck a composite expression against central differences
+#   f(x) = (x*x + 1) / (x - 4)     (uses + * ** / and a constant)
+# ---------------------------------------------------------------------------
+def _f(x):
+    return (x * x + 1.0) / (x - 4.0)
+
+
+@pytest.mark.parametrize("x0", [-2.0, -0.5, 0.0, 1.3, 2.7])
+def test_backward_gradcheck_composite(x0):
+    x = Value(x0)
+    out = (x * x + 1.0) / (x - 4.0)
+    out.backward()
+    num = central_diff(_f, x0)
+    assert x.grad == pytest.approx(num, abs=TOL, rel=1e-4), (
+        f"backward dy/dx at x={x0}: analytic={x.grad}, numeric={num}"
     )
 
 
-def test_f_chain_known_point():
-    # x = 0: u = 1, v = 1, y = tanh(1).
-    # dy/dx = (1 - tanh(1)^2) * 2u * 3 = (1 - tanh(1)^2) * 6
-    expected = (1.0 - math.tanh(1.0) ** 2) * 6.0
-    _, dy_dx = f_chain(0.0)
-    assert dy_dx == pytest.approx(expected, abs=1e-9)
+@pytest.mark.parametrize("x0", [0.5, 1.0, 2.0, 3.5])
+def test_backward_gradcheck_with_pow(x0):
+    # f(x) = x**3 - 2*x   ->  f'(x) = 3x^2 - 2
+    x = Value(x0)
+    out = x ** 3 - 2.0 * x
+    out.backward()
+    assert x.grad == pytest.approx(3.0 * x0 ** 2 - 2.0, abs=TOL, rel=1e-4)
 
 
 # ---------------------------------------------------------------------------
-# f_branch: a = x+1, b = x^2, y = a*b  (x feeds both branches)
+# does not zero grads first (accumulates across calls if not reset)
 # ---------------------------------------------------------------------------
-
-def _f_branch_value(x):
-    a = x + 1.0
-    b = x * x
-    return a * b
-
-
-@pytest.mark.parametrize("x", [-2.0, -0.5, 0.0, 1.1, 3.0])
-def test_f_branch_value_matches_forward(x):
-    y, _ = f_branch(x)
-    assert y == pytest.approx(_f_branch_value(x), abs=1e-9)
-
-
-@pytest.mark.parametrize("x", [-2.0, -0.5, 0.0, 1.1, 3.0])
-def test_f_branch_gradcheck(x):
-    _, dy_dx = f_branch(x)
-    num = central_diff(_f_branch_value, x)
-    assert dy_dx == pytest.approx(num, abs=TOL, rel=1e-4), (
-        f"f_branch dy/dx at x={x}: analytical={dy_dx}, numerical={num}"
-    )
-
-
-def test_f_branch_known_point():
-    # y = (x+1)*x^2 = x^3 + x^2  ->  dy/dx = 3x^2 + 2x. At x=2: 12 + 4 = 16.
-    _, dy_dx = f_branch(2.0)
-    assert dy_dx == pytest.approx(16.0, abs=1e-9)
-
-
-# ---------------------------------------------------------------------------
-# backward_pass: full reverse pass over f_branch's expression
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("x", [-2.0, -0.5, 0.0, 1.1, 3.0])
-def test_backward_pass_seed(x):
-    grads = backward_pass(x)
-    assert grads["y"] == pytest.approx(1.0), "must seed dy/dy = 1.0"
-
-
-@pytest.mark.parametrize("x", [-2.0, -0.5, 0.0, 1.1, 3.0])
-def test_backward_pass_keys(x):
-    grads = backward_pass(x)
-    assert set(grads.keys()) == {"y", "a", "b", "x"}
-
-
-@pytest.mark.parametrize("x", [-2.0, -0.5, 0.0, 1.1, 3.0])
-def test_backward_pass_intermediates(x):
-    # a = x+1, b = x^2, y = a*b  =>  dy/da = b, dy/db = a
-    grads = backward_pass(x)
-    assert grads["a"] == pytest.approx(x * x, abs=1e-9)          # dy/da = b
-    assert grads["b"] == pytest.approx(x + 1.0, abs=1e-9)        # dy/db = a
-
-
-@pytest.mark.parametrize("x", [-2.0, -0.5, 0.0, 1.1, 3.0])
-def test_backward_pass_matches_f_branch(x):
-    grads = backward_pass(x)
-    _, dy_dx = f_branch(x)
-    assert grads["x"] == pytest.approx(dy_dx, abs=1e-9), (
-        "backward_pass dy/dx must equal f_branch dy/dx"
-    )
-
-
-@pytest.mark.parametrize("x", [-2.0, -0.5, 0.0, 1.1, 3.0])
-def test_backward_pass_gradcheck(x):
-    grads = backward_pass(x)
-    num = central_diff(_f_branch_value, x)
-    assert grads["x"] == pytest.approx(num, abs=TOL, rel=1e-4), (
-        f"backward_pass dy/dx at x={x}: analytical={grads['x']}, numerical={num}"
-    )
+def test_backward_does_not_zero_existing_grad():
+    a, b = Value(2.0), Value(3.0)
+    out = a * b
+    out.backward()
+    first = a.grad
+    out.backward()  # second pass, no zeroing
+    assert a.grad == pytest.approx(2.0 * first), "grad accumulates across backward calls"

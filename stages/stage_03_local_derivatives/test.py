@@ -1,14 +1,11 @@
-"""Tests for Stage 3: Local derivatives.
+"""Tests for Stage 3: Local derivatives as `_backward` closures.
 
-We test the per-op local-derivative functions against:
-  1. their hand-derived closed forms, and
-  2. a central-difference numerical estimate of each partial.
+Each op installs a ``_backward`` closure on the result node. There is no global
+``backward()`` yet (that is stage_04), so we test a closure in isolation: build a
+result node, seed its ``.grad`` by hand, call ``node._backward()`` once, and
+check the local derivative landed on each operand's ``.grad``.
 
-We also test the ``local_derivatives`` dispatcher against a minimal ``Value``
-stub that mirrors the stage_02 interface (``.data``, ``._op`` and operand-ordered
-parents), so this stage's tests run without standing up a full stage_02 graph.
-The dispatcher itself is the new behavior this stage adds on top of stage_02's
-imported ``Value``.
+Run: pytest stage_03_local_derivatives/test.py
 """
 import os as _os
 import sys as _sys
@@ -23,238 +20,132 @@ _THIS_DIR = _os.path.dirname(_os.path.abspath(__file__))
 _ROOT = _os.path.dirname(_THIS_DIR)
 if _ROOT not in _sys.path:
     _sys.path.insert(0, _ROOT)
-_spec = _ilu.spec_from_file_location(
-    "code", _os.path.join(_THIS_DIR, "code.py")
-)
+_spec = _ilu.spec_from_file_location("code", _os.path.join(_THIS_DIR, "code.py"))
 _mod = _ilu.module_from_spec(_spec)
 _sys.modules["code"] = _mod
 _spec.loader.exec_module(_mod)
-from code import (
-    d_add,
-    d_sub,
-    d_mul,
-    d_div,
-    d_neg,
-    local_derivatives,
-)
+from code import Value
 
-EPS = 1e-6
 TOL = 1e-6
 
 
 # ---------------------------------------------------------------------------
-# Central-difference helpers
+# add: a.grad += g ; b.grad += g
 # ---------------------------------------------------------------------------
+def test_add_backward_local():
+    a, b = Value(2.0), Value(3.0)
+    out = a + b
+    assert out.data == 5.0
+    out.grad = 1.0
+    out._backward()
+    assert a.grad == pytest.approx(1.0)
+    assert b.grad == pytest.approx(1.0)
 
 
-def central_diff_partial(f, args, i, eps=EPS):
-    """Estimate df/d(args[i]) at ``args`` via central differences.
-
-    ``f`` takes positional float args and returns a float.
-    """
-    plus = list(args)
-    minus = list(args)
-    plus[i] += eps
-    minus[i] -= eps
-    return (f(*plus) - f(*minus)) / (2 * eps)
-
-
-# Forward functions matching each op (used only to numerically check grads).
-_F = {
-    "add": lambda a, b: a + b,
-    "sub": lambda a, b: a - b,
-    "mul": lambda a, b: a * b,
-    "div": lambda a, b: a / b,
-    "neg": lambda a: -a,
-}
+def test_add_backward_scales_with_output_grad():
+    a, b = Value(2.0), Value(3.0)
+    out = a + b
+    out.grad = 7.0          # upstream gradient
+    out._backward()
+    assert a.grad == pytest.approx(7.0)
+    assert b.grad == pytest.approx(7.0)
 
 
 # ---------------------------------------------------------------------------
-# Minimal Value stub mirroring stage_02's Value interface
+# mul: a.grad += b*g ; b.grad += a*g
 # ---------------------------------------------------------------------------
+def test_mul_backward_local():
+    a, b = Value(2.0), Value(3.0)
+    out = a * b
+    assert out.data == 6.0
+    out.grad = 1.0
+    out._backward()
+    assert a.grad == pytest.approx(3.0)   # dz/da = b
+    assert b.grad == pytest.approx(2.0)   # dz/db = a
 
 
-class StubNode:
-    """Minimal stand-in for the stage_02 ``Value``.
-
-    Exposes ``data`` and ``_op`` -- the core fields ``local_derivatives``
-    reads -- plus operand-ordered parents under both ``_inputs`` (an ordered
-    tuple) and ``_prev`` (a set, as stage_02 stores them), so the dispatcher
-    works however it recovers operand order. A leaf uses ``_op == ""``.
-    """
-
-    def __init__(self, value, op="", inputs=()):
-        self.data = float(value)
-        self.value = self.data  # alias, in case a stage exposes ``.value``
-        self._op = op
-        self._inputs = tuple(inputs)
-        self._prev = set(inputs)
-
-
-def leaf(v):
-    return StubNode(v)
+def test_mul_backward_scales_with_output_grad():
+    a, b = Value(4.0), Value(-5.0)
+    out = a * b
+    out.grad = 2.0
+    out._backward()
+    assert a.grad == pytest.approx(-5.0 * 2.0)
+    assert b.grad == pytest.approx(4.0 * 2.0)
 
 
 # ---------------------------------------------------------------------------
-# d_add
+# pow: a.grad += c*a**(c-1)*g  (c constant)
 # ---------------------------------------------------------------------------
+@pytest.mark.parametrize("a,c", [(3.0, 2), (2.0, 3), (4.0, 0.5), (5.0, -1)])
+def test_pow_backward_local(a, c):
+    x = Value(a)
+    out = x ** c
+    assert out.data == pytest.approx(a ** c)
+    out.grad = 1.0
+    out._backward()
+    assert x.grad == pytest.approx(c * a ** (c - 1))
 
 
-@pytest.mark.parametrize("a,b", [(1.0, 2.0), (-3.5, 4.25), (0.0, -7.0)])
-def test_d_add_closed_form(a, b):
-    da, db = d_add(a, b)
-    assert da == pytest.approx(1.0)
-    assert db == pytest.approx(1.0)
-
-
-@pytest.mark.parametrize("a,b", [(1.0, 2.0), (-3.5, 4.25), (0.0, -7.0)])
-def test_d_add_gradcheck(a, b):
-    da, db = d_add(a, b)
-    nda = central_diff_partial(_F["add"], (a, b), 0)
-    ndb = central_diff_partial(_F["add"], (a, b), 1)
-    assert da == pytest.approx(nda, abs=TOL), f"d_add da analytic={da} numeric={nda}"
-    assert db == pytest.approx(ndb, abs=TOL), f"d_add db analytic={db} numeric={ndb}"
+def test_pow_rejects_value_exponent():
+    a = Value(3.0)
+    with pytest.raises((AssertionError, TypeError)):
+        _ = a ** Value(2.0)
 
 
 # ---------------------------------------------------------------------------
-# d_sub
+# derived ops compose from + * ** -> their closures still give right locals
 # ---------------------------------------------------------------------------
+def test_sub_backward_via_composition():
+    # a - b = a + (-b); seed and run each intermediate node's _backward by hand
+    a, b = Value(7.0), Value(2.0)
+    out = a - b
+    assert out.data == pytest.approx(5.0)
+    # full propagation is stage_04; here just check the top node is an add whose
+    # _backward pushes grad to its two parents (a and the (-b) node).
+    out.grad = 1.0
+    out._backward()
+    parents = list(out._prev)
+    assert all(p.grad == pytest.approx(1.0) for p in parents), (
+        "a - b is a + (-b); the add closure pushes grad 1 to both parents"
+    )
 
 
-@pytest.mark.parametrize("a,b", [(1.0, 2.0), (-3.5, 4.25), (9.0, -7.0)])
-def test_d_sub_closed_form(a, b):
-    da, db = d_sub(a, b)
-    assert da == pytest.approx(1.0)
-    assert db == pytest.approx(-1.0)
-
-
-@pytest.mark.parametrize("a,b", [(1.0, 2.0), (-3.5, 4.25), (9.0, -7.0)])
-def test_d_sub_gradcheck(a, b):
-    da, db = d_sub(a, b)
-    nda = central_diff_partial(_F["sub"], (a, b), 0)
-    ndb = central_diff_partial(_F["sub"], (a, b), 1)
-    assert da == pytest.approx(nda, abs=TOL), f"d_sub da analytic={da} numeric={nda}"
-    assert db == pytest.approx(ndb, abs=TOL), f"d_sub db analytic={db} numeric={ndb}"
-
-
-# ---------------------------------------------------------------------------
-# d_mul
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize("a,b", [(1.0, 2.0), (-3.5, 4.25), (6.0, -7.0)])
-def test_d_mul_closed_form(a, b):
-    da, db = d_mul(a, b)
-    assert da == pytest.approx(b), "dz/da of a*b must equal b"
-    assert db == pytest.approx(a), "dz/db of a*b must equal a"
-
-
-@pytest.mark.parametrize("a,b", [(1.0, 2.0), (-3.5, 4.25), (6.0, -7.0)])
-def test_d_mul_gradcheck(a, b):
-    da, db = d_mul(a, b)
-    nda = central_diff_partial(_F["mul"], (a, b), 0)
-    ndb = central_diff_partial(_F["mul"], (a, b), 1)
-    assert da == pytest.approx(nda, abs=TOL), f"d_mul da analytic={da} numeric={nda}"
-    assert db == pytest.approx(ndb, abs=TOL), f"d_mul db analytic={db} numeric={ndb}"
+def test_div_backward_is_not_symmetric():
+    # a / b = a * b**-1. Asymmetry lives in the closures, not in stored order.
+    a, b = Value(6.0), Value(3.0)
+    out = a / b
+    assert out.data == pytest.approx(2.0)
+    out.grad = 1.0
+    out._backward()
+    # top node is a multiply: a*(b**-1). Its parents are `a` and the `b**-1` node.
+    # da gets (b**-1)=1/3 ; the other parent gets a=6. They differ -> not symmetric.
+    grads = sorted(p.grad for p in out._prev)
+    assert grads[0] != pytest.approx(grads[1])
 
 
 # ---------------------------------------------------------------------------
-# d_div  (asymmetric!)
+# accumulation: a reused operand += from each consumer
 # ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize("a,b", [(1.0, 2.0), (-3.5, 4.25), (6.0, -7.0)])
-def test_d_div_closed_form(a, b):
-    da, db = d_div(a, b)
-    assert da == pytest.approx(1.0 / b), "dz/da of a/b must equal 1/b"
-    assert db == pytest.approx(-a / b ** 2), "dz/db of a/b must equal -a/b**2"
-
-
-@pytest.mark.parametrize("a,b", [(1.0, 2.0), (-3.5, 4.25), (6.0, -7.0)])
-def test_d_div_gradcheck(a, b):
-    da, db = d_div(a, b)
-    nda = central_diff_partial(_F["div"], (a, b), 0)
-    ndb = central_diff_partial(_F["div"], (a, b), 1)
-    assert da == pytest.approx(nda, abs=TOL), f"d_div da analytic={da} numeric={nda}"
-    assert db == pytest.approx(ndb, abs=TOL), f"d_div db analytic={db} numeric={ndb}"
-
-
-def test_d_div_not_symmetric():
-    # Division is not symmetric: the two partials must differ in general.
-    da, db = d_div(3.0, 2.0)
-    assert da != pytest.approx(db)
-
-
-def test_d_div_zero_denominator_raises():
-    with pytest.raises(ZeroDivisionError):
-        d_div(1.0, 0.0)
+def test_self_mul_accumulates():
+    # out = a * a ; both factors are the SAME node, so its _backward adds a+a = 2a
+    a = Value(3.0)
+    out = a * a
+    assert out.data == 9.0
+    out.grad = 1.0
+    out._backward()
+    assert a.grad == pytest.approx(6.0), "a*a: a.grad must be a + a = 2a = 6"
 
 
 # ---------------------------------------------------------------------------
-# d_neg
+# leaf closure is a no-op (inherited from stage_02)
 # ---------------------------------------------------------------------------
+def test_leaf_backward_noop():
+    a = Value(4.0)
+    a._backward()
+    assert a.grad == 0.0
 
 
-@pytest.mark.parametrize("a", [1.0, -3.5, 0.0, 12.0])
-def test_d_neg_closed_form(a):
-    (da,) = d_neg(a)
-    assert da == pytest.approx(-1.0)
-
-
-@pytest.mark.parametrize("a", [1.0, -3.5, 12.0])
-def test_d_neg_gradcheck(a):
-    (da,) = d_neg(a)
-    nda = central_diff_partial(_F["neg"], (a,), 0)
-    assert da == pytest.approx(nda, abs=TOL), f"d_neg analytic={da} numeric={nda}"
-
-
-# ---------------------------------------------------------------------------
-# local_derivatives dispatcher
-# ---------------------------------------------------------------------------
-
-
-def test_local_derivatives_add():
-    z = StubNode(5.0, op="+", inputs=(leaf(2.0), leaf(3.0)))
-    assert local_derivatives(z) == pytest.approx((1.0, 1.0))
-
-
-def test_local_derivatives_sub():
-    z = StubNode(-1.0, op="-", inputs=(leaf(2.0), leaf(3.0)))
-    assert local_derivatives(z) == pytest.approx((1.0, -1.0))
-
-
-def test_local_derivatives_mul():
-    a, b = 2.0, 3.0
-    z = StubNode(a * b, op="*", inputs=(leaf(a), leaf(b)))
-    # dz/da = b, dz/db = a -- in input order.
-    assert local_derivatives(z) == pytest.approx((b, a))
-
-
-def test_local_derivatives_div():
-    a, b = 6.0, 4.0
-    z = StubNode(a / b, op="/", inputs=(leaf(a), leaf(b)))
-    assert local_derivatives(z) == pytest.approx((1.0 / b, -a / b ** 2))
-
-
-def test_local_derivatives_neg():
-    z = StubNode(-7.0, op="neg", inputs=(leaf(7.0),))
-    assert local_derivatives(z) == pytest.approx((-1.0,))
-
-
-def test_local_derivatives_leaf_returns_empty():
-    assert local_derivatives(leaf(3.0)) == ()
-
-
-def test_local_derivatives_order_matches_inputs():
-    # For mul the partials are (b, a); the result order must follow inputs.
-    a, b = 10.0, 0.5
-    z = StubNode(a * b, op="*", inputs=(leaf(a), leaf(b)))
-    da, db = local_derivatives(z)
-    assert da == pytest.approx(b)
-    assert db == pytest.approx(a)
-
-
-def test_local_derivatives_unknown_op_raises():
-    bogus = StubNode(0.0, op="???", inputs=(leaf(1.0), leaf(2.0)))
-    with pytest.raises(ValueError):
-        local_derivatives(bogus)
+def test_repr_has_data_and_grad():
+    a = Value(2.0)
+    r = repr(a)
+    assert "data=" in r and "grad=" in r

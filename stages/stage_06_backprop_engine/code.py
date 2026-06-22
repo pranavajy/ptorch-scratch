@@ -1,41 +1,43 @@
 """Stage 6: Scalar reverse-mode autodiff engine.
 
-Imports stage_05's reverse-mode ``Value`` and subclasses it, adding only the new
-ops (__pow__, tanh, exp, relu), thin re-blessing __add__/__mul__, and a
-grad-aware __repr__. Inherited graph/accumulation machinery is reused, not
-re-derived. SKELETON ONLY. Stdlib only (no autodiff libraries).
+Imports stage_04's complete reverse-mode ``Value`` (graph + per-op ``_backward``
++ ``backward()``) and subclasses it, adding only the new ops (tanh, exp, relu),
+thin re-blessing __add__/__mul__/__pow__, and a grad-aware __repr__. Inherited
+graph/accumulation/backward machinery is reused, not re-derived. SKELETON ONLY.
+Stdlib only (no autodiff libraries).
 """
 
 from __future__ import annotations
 
+import math
 from typing import Union
 
 from dlfs import stage_import
 
-# Reverse-mode Value (graph + backward()) from stage_05; extended here.
-Stage5_Value = stage_import("stage_05", "Value")
+# Complete scalar autodiff Value (graph + backward()) from stage_04; extended here.
+Stage4_Value = stage_import("stage_04", "Value")
 
 Number = Union[int, float]
 
 
-class Value(Stage5_Value):
-    """Scalar node in a differentiable graph; extends stage_05's reverse-mode Value.
+class Value(Stage4_Value):
+    """Scalar node in a differentiable graph; extends stage_04's reverse-mode Value.
 
-    Inherits __init__/_backward, differentiable __add__/__mul__, reflected ops,
-    backward(), and the derived ops (__neg__/__sub__/__rsub__/__truediv__). This
-    stage only completes the remaining primitive ops and their gradient rules.
+    Inherits __init__/_backward, differentiable __add__/__mul__/__pow__, reflected
+    ops, backward(), and the derived ops (__neg__/__sub__/__rsub__/__truediv__).
+    This stage only adds the remaining primitive ops and their gradient rules.
     """
 
-    # Re-bless inherited core ops so they return a stage-06 Value (lets unary
-    # ops and __pow__ chain on intermediates); delegates math to stage_05.
+    # Re-bless inherited core ops so they return a stage-06 Value (lets the new
+    # unary ops chain on intermediates); delegates math to stage_04.
 
     def __add__(self, other: Union["Value", Number]) -> "Value":
-        """Return self + other via stage_05's __add__, re-tagged as stage-06 Value."""
+        """Return self + other via stage_04's __add__, re-tagged as stage-06 Value."""
         # TODO: delegate to super().__add__, then re-bless the result's class
         raise NotImplementedError
 
     def __mul__(self, other: Union["Value", Number]) -> "Value":
-        """Return self * other via stage_05's __mul__, re-tagged as stage-06 Value."""
+        """Return self * other via stage_04's __mul__, re-tagged as stage-06 Value."""
         # TODO: delegate to super().__mul__, then re-bless the result's class
         raise NotImplementedError
 
@@ -43,8 +45,12 @@ class Value(Stage5_Value):
     # that accumulates into inputs with += (never =).
 
     def __pow__(self, n: Number) -> "Value":
-        """Return self ** n for constant int/float n (NOT a Value). d/dx = n*x**(n-1)."""
-        # TODO: assert n is a constant int/float, then implement forward + backward
+        """Return self ** n via stage_04's __pow__, re-tagged as stage-06 Value.
+
+        The forward + ``_backward`` (d/dx = n*x**(n-1)) already live in stage_03;
+        here just delegate to super() and re-bless so results chain as stage-06.
+        """
+        # TODO: delegate to super().__pow__, then re-bless the result's class
         raise NotImplementedError
 
     def tanh(self) -> "Value":

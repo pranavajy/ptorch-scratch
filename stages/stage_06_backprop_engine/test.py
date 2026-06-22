@@ -18,7 +18,7 @@ import sys
 
 import pytest
 
-# This stage's ``code.py`` extends stage_05's reverse-mode ``Value`` via
+# This stage's ``code.py`` extends stage_04's reverse-mode ``Value`` via
 # ``dlfs.stage_import``, so the curriculum root (which holds the ``dlfs``
 # package) must be importable.
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -29,7 +29,7 @@ if _ROOT not in sys.path:
 # Load this stage's ``code.py`` by file path. A plain ``from code import ...``
 # would collide with Python's standard-library ``code`` module (which pytest's
 # debugger imports), so we load the sibling file explicitly. This runs the
-# tests against THIS stage's extended ``Value`` (a subclass of stage_05's),
+# tests against THIS stage's extended ``Value`` (a subclass of stage_04's),
 # regardless of which directory pytest is invoked from.
 _spec = importlib.util.spec_from_file_location(
     "stage_06_code", os.path.join(_THIS_DIR, "code.py")
