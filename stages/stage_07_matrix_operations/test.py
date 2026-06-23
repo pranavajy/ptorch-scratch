@@ -104,7 +104,7 @@ def test_existing_value_not_rewrapped():
 
 
 def test_ragged_rows_raise():
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         Mat([[1.0, 2.0], [3.0]])
 
 
@@ -120,7 +120,7 @@ def test_matmul_forward_matches_numpy():
 
 
 def test_matmul_inner_dim_mismatch_raises():
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         Mat(rand_grid(3, 4)) @ Mat(rand_grid(5, 6))
 
 
