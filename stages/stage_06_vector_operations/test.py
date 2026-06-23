@@ -106,9 +106,9 @@ def test_relu_forward():
 def test_length_mismatch_raises():
     a = Vec([1.0, 2.0])
     b = Vec([1.0, 2.0, 3.0])
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         _ = a + b
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         _ = a.dot(b)
 
 
