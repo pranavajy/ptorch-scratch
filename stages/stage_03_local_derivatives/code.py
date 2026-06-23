@@ -8,6 +8,10 @@ is still NO global pass that runs these closures in order; that is stage_04's
 ``backward()``. The closures capture their operands directly, which is why the
 asymmetric ops (`-`, `/`) need no operand-order bookkeeping on the node.
 
+Each op override is two lines of new work: let ``super()`` build the result node
+(it already does the forward math and records ``_prev``/``_op``), then attach the
+gradient closure. You never re-do the forward arithmetic here.
+
 Local rules (output grad ``g`` flows back as):
   z = a + b   -> a.grad += g,        b.grad += g
   z = a * b   -> a.grad += b * g,    b.grad += a * g
@@ -34,32 +38,37 @@ Number = Union[int, float]
 class Value(Stage2_Value):
     """stage_02 graph `Value`, extended so each op installs its `_backward` rule.
 
-    ``__add__``/``__mul__``/``__pow__`` build the result node (as in stage_02) and
-    then set ``out._backward`` to a closure that accumulates the local derivative
-    onto each operand's ``.grad`` using the output's ``.grad``. The derived ops
-    (`-`, unary `-`, `/`) inherit from stage_01 and compose out of `+`/`*`/`**`,
-    so they get correct gradients for free — no separate closure needed.
+    ``__add__``/``__mul__``/``__pow__`` let ``super()`` build the result node (the
+    forward math + ``_prev``/``_op`` recording is inherited unchanged) and then set
+    ``out._backward`` to a closure that accumulates the local derivative onto each
+    operand's ``.grad`` using the output's ``.grad``. The derived ops (`-`, unary
+    `-`, `/`) inherit from stage_01 and compose out of `+`/`*`/`**`, so they get
+    correct gradients for free — no separate closure needed.
+
+    Coerce ``other`` to a ``Value`` first (as the inherited op does), then capture
+    ``self`` and ``other`` directly in the closure — that is how the asymmetric ops
+    know which side is which without the node storing operand order.
     """
 
     def __add__(self, other: "Value | Number") -> "Value":
         """self + other; install _backward: a.grad += out.grad; b.grad += out.grad."""
-        # TODO: coerce other; build out = Value(self.data + other.data, (self, other), '+');
-        # define _backward() doing self.grad += out.grad; other.grad += out.grad;
+        # TODO: coerce other to Value; out = super().__add__(other) (builds the '+'
+        # node); define _backward() doing self.grad += out.grad; other.grad += out.grad;
         # set out._backward = _backward; return out
         raise NotImplementedError("stage_03: implement __add__ + its _backward")
 
     def __mul__(self, other: "Value | Number") -> "Value":
         """self * other; install _backward: a.grad += b*out.grad; b.grad += a*out.grad."""
-        # TODO: coerce other; build out = Value(self.data * other.data, (self, other), '*');
-        # define _backward() doing self.grad += other.data * out.grad;
+        # TODO: coerce other to Value; out = super().__mul__(other) (builds the '*'
+        # node); define _backward() doing self.grad += other.data * out.grad;
         # other.grad += self.data * out.grad; set out._backward; return out
         raise NotImplementedError("stage_03: implement __mul__ + its _backward")
 
     def __pow__(self, c: Number) -> "Value":
         """self ** c (c a constant int/float); install _backward: a.grad += c*a**(c-1)*out.grad."""
-        # TODO: assert isinstance(c, (int, float)); build
-        # out = Value(self.data ** c, (self,), f'**{c}'); define _backward() doing
-        # self.grad += (c * self.data ** (c - 1)) * out.grad; set out._backward; return out
+        # TODO: out = super().__pow__(c) (asserts c is int/float and builds the node);
+        # define _backward() doing self.grad += (c * self.data ** (c - 1)) * out.grad;
+        # set out._backward; return out
         raise NotImplementedError("stage_03: implement __pow__ + its _backward")
 
     # __neg__ / __sub__ / __rsub__ / __truediv__ / __rtruediv__ are INHERITED from

@@ -14,12 +14,12 @@ The asymmetric ops need **no operand-order bookkeeping** on the node. `a - b` is
 - [The Chain Rule (Backpropagation calculus)](https://www.youtube.com/watch?v=tIeHLnjs5U8) — 3Blue1Brown: how local derivatives chain edge-by-edge through a graph.
 - [The spelled-out intro to neural networks and backpropagation: building micrograd](https://www.youtube.com/watch?v=VMj-3S1tku0) — Karpathy: he installs exactly these `_backward` closures op by op.
 
-**Cumulative** — Imports `Value` from `stage_02` via `dlfs.stage_import` and SUBCLASSES it. It overrides `__add__`, `__mul__`, `__pow__` so each builds its result node (as in stage_02) **and** sets `out._backward` to the local-derivative closure. The derived ops (`__neg__`/`__sub__`/`__truediv__`, inherited from stage_01) compose out of those three, so they get correct gradients for free. No global `backward()` yet.
+**Cumulative** — Imports `Value` from `stage_02` via `dlfs.stage_import` and SUBCLASSES it. It overrides `__add__`, `__mul__`, `__pow__` — but only to **attach the closure**: each override lets `super()` build the result node (which already does the forward math and records `_prev`/`_op`) and then sets `out._backward` to the local-derivative closure. You never re-do the forward arithmetic. The derived ops (`__neg__`/`__sub__`/`__truediv__`, inherited from stage_01) compose out of those three, so they get correct gradients for free. No global `backward()` yet.
 
-**Exercise** — In `code.py`, subclass the `stage_02` `Value` and install `_backward` closures:
-- `__add__(self, other)`: coerce a number operand to `Value`; build `out = Value(self.data + other.data, (self, other), '+')`; set `out._backward` to a closure doing `self.grad += out.grad; other.grad += out.grad`.
-- `__mul__(self, other)`: build the `'*'` node; closure does `self.grad += other.data * out.grad; other.grad += self.data * out.grad`.
-- `__pow__(self, c)`: assert `c` is an int/float constant; build the `f'**{c}'` node; closure does `self.grad += (c * self.data ** (c - 1)) * out.grad`.
+**Exercise** — In `code.py`, subclass the `stage_02` `Value` and install `_backward` closures. In each op, coerce a number operand to a `Value` first (so you can capture it in the closure), let `super()` build the node, then attach the closure:
+- `__add__(self, other)`: `other = other if isinstance(other, Value) else Value(other)`; `out = super().__add__(other)`; set `out._backward` to a closure doing `self.grad += out.grad; other.grad += out.grad`.
+- `__mul__(self, other)`: same coercion; `out = super().__mul__(other)`; closure does `self.grad += other.data * out.grad; other.grad += self.data * out.grad`.
+- `__pow__(self, c)`: `out = super().__pow__(c)` (the inherited `__pow__` already asserts `c` is an int/float constant and labels the node `f'**{c}'`); closure does `self.grad += (c * self.data ** (c - 1)) * out.grad`.
 - Do **not** re-implement `__neg__`/`__sub__`/`__rsub__`/`__truediv__`/`__rtruediv__` — they are inherited and compose out of the three above, so their gradients flow through your closures.
 - `__repr__`: `Value(data=..., grad=...)`.
 - The closures must use `+=` (accumulate), never `=`.

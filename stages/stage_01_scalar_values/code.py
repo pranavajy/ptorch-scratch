@@ -1,20 +1,56 @@
 """Stage 01: Scalar values & arithmetic — the seed of the autodiff engine.
 
 Defines ``Value``, a wrapper around a single scalar with operator overloading
-(+ - * / ** neg and reflected forms). No graph bookkeeping or .backward() yet;
-those arrive in later stages that subclass this. Standard library only.
+(+ - * / ** neg and reflected forms). No gradients and no graph *walk* yet — but
+the class is shaped from the start the way the finished engine needs it, so later
+stages only ADD behavior and never rewrite these operators:
+
+* The constructor already takes ``(data, _children=(), _op="")`` and stores the
+  graph fields ``_prev`` / ``_op`` / ``_backward``. They are inert plumbing here
+  (nothing reads them yet); stage_02 adds the ``trace`` walk that uses ``_prev``,
+  stage_03 fills the ``_backward`` hook, stage_04 walks it for ``.backward()``.
+* Every operator builds its result through ``self._make(...)``, which constructs
+  ``type(self)(...)`` — so when a later stage subclasses ``Value``, the SAME
+  operators return that subclass and record the operands, with no override needed.
+
+Standard library only.
 """
 
 
 class Value:
     """A scalar (stored as float) with arithmetic via operator overloading.
 
-    data: the wrapped number. grad: always 0.0 here; filled by later stages.
+    Fields:
+    - ``data``: the wrapped number (float).
+    - ``grad``: 0.0 here; filled by the stage_04 ``.backward()`` pass.
+    - ``_prev``: the set of operand ``Value``s this result was built from
+      (``set()`` for a leaf). A set so a reused operand (``a * a``) is one parent.
+    - ``_op``: a string label for the op that built this node (``''`` for a leaf).
+    - ``_backward``: a no-op closure here; stage_03 installs the per-op gradient
+      rule on it. Reserving the field now keeps the field set stable across stages.
+
+    Operand ORDER is not stored: ``_prev`` is a set, which is fine because the
+    stage_03 gradient closures capture each operand directly, so ``a - b`` and
+    ``a / b`` know which side is which without the node remembering order.
     """
 
-    def __init__(self, data):
-        """Store data as float; init grad to 0.0."""
-        # TODO: set self.data (float) and self.grad
+    def __init__(self, data, _children=(), _op=""):
+        """Store ``data`` as float, init ``grad``, and record graph provenance.
+
+        Set ``self.data`` (float), ``self.grad = 0.0``, ``self._prev = set(_children)``,
+        ``self._op = _op``, and a no-op ``self._backward = lambda: None``.
+        """
+        # TODO: set self.data (float), self.grad (0.0), self._prev (set of _children),
+        # self._op, and self._backward (no-op lambda)
+        raise NotImplementedError
+
+    def _make(self, data, _children, _op):
+        """Build a result node of THIS class: ``type(self)(data, _children, _op)``.
+
+        Using ``type(self)`` (not ``Value``) means a subclass's operators return the
+        subclass, so the whole graph is uniform and later stages need no op rewrites.
+        """
+        # TODO: return type(self)(data, _children, _op)
         raise NotImplementedError
 
     def __repr__(self):
@@ -23,18 +59,21 @@ class Value:
         raise NotImplementedError
 
     def __add__(self, other):
-        """Return a new Value: self + other (wrap other if it's a number)."""
-        # TODO
+        """self + other; record (self, other) and op '+'. Wrap a number operand."""
+        # TODO: coerce other to Value; return self._make(self.data + other.data,
+        # (self, other), "+")
         raise NotImplementedError
 
     def __mul__(self, other):
-        """Return a new Value: self * other (wrap other if it's a number)."""
-        # TODO
+        """self * other; record (self, other) and op '*'. Wrap a number operand."""
+        # TODO: coerce other to Value; return self._make(self.data * other.data,
+        # (self, other), "*")
         raise NotImplementedError
 
     def __pow__(self, exponent):
-        """Return a new Value: self ** exponent (exponent is int/float, not Value)."""
-        # TODO
+        """self ** exponent (int/float, not Value); record (self,) and op f'**{exponent}'."""
+        # TODO: assert exponent is int/float; return self._make(self.data ** exponent,
+        # (self,), f"**{exponent}")
         raise NotImplementedError
 
     def __neg__(self):
