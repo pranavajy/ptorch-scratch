@@ -1,4 +1,4 @@
-"""Stage 23 tests: Batch Normalization (1-D).
+"""Stage 22 tests: Batch Normalization (1-D).
 
 Covers:
   * forward standardization (mean ~ 0, var ~ 1) and the gamma/beta affine,

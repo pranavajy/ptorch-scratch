@@ -1,4 +1,4 @@
-"""Stage 21: L1 & L2 regularization.
+"""Stage 20: L1 & L2 regularization.
 
 Adds a weight penalty to the loss: L_tilde = L + lam * R, where
 R2 = 0.5 * sum(theta**2) (grad theta) and R1 = sum(|theta|) (grad sign(theta)).

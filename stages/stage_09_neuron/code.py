@@ -1,4 +1,4 @@
-"""Stage 10: Neuron.
+"""Stage 09: Neuron.
 
 A single neuron ``y = phi(x @ w + b)`` built on stage_08's autodiff ``Tensor``.
 Wire up the forward expression only; gradients flow through ``Tensor.backward()``.

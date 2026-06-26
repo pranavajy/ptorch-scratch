@@ -1,4 +1,4 @@
-"""Stage 34: Capstone -- CIFAR-10.
+"""Stage 33: Capstone -- CIFAR-10.
 
 Train a convolutional classifier on CIFAR-10 (32x32 RGB, 10 classes) using only
 ``mytorch``. The one new gradient here is ``BatchNorm2d``; everything else

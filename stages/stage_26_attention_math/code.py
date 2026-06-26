@@ -1,4 +1,4 @@
-"""Stage 27: Attention mathematics.
+"""Stage 26: Attention mathematics.
 
 Scaled dot-product attention as pure NumPy reference functions (forward + backward);
 no autodiff Tensor, no layer class. Row-wise softmax means over the LAST axis (keys).

@@ -1,4 +1,4 @@
-"""Tests for Stage 09: Tensor engine.
+"""Tests for Stage 08: Tensor engine.
 
 Verifies the N-dimensional autodiff `Tensor`:
   * forward values and operator overloading (incl. reflected ops with numbers),

@@ -1,4 +1,4 @@
-"""Stage 7: Vector operations.
+"""Stage 06: Vector operations.
 
 A thin ``Vec`` container built ON TOP of the stage_05 scalar ``Value`` engine;
 every vector op composes scalar ``Value`` ops so autodiff flows through stage_05.

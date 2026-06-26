@@ -1,4 +1,4 @@
-"""Stage 30: Transformer block.
+"""Stage 29: Transformer block.
 
 Canonical Transformer block from earlier pieces: MultiHeadAttention (stage_28),
 a position-wise feed-forward MLP (stage_11), two hand-derived LayerNorms, and

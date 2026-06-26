@@ -1,4 +1,4 @@
-"""Tests for Stage 12: MLP.
+"""Tests for Stage 11: MLP.
 
 These tests verify the forward shapes of a multilayer perceptron, that it
 gathers all of its layers' parameters, and they gradient-check a scalar loss

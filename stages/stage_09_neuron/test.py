@@ -1,4 +1,4 @@
-"""Tests for Stage 10: Neuron.
+"""Tests for Stage 09: Neuron.
 
 These tests verify the forward shapes of a single neuron and gradient-check its
 output with respect to the weights, bias, and input using central differences:

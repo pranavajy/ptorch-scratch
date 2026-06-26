@@ -1,4 +1,4 @@
-"""Stage 17: Momentum.
+"""Stage 16: Momentum.
 
 SGD with a velocity buffer (heavy-ball momentum) and an optional Nesterov
 variant, built by subclassing the plain ``SGD`` from stage_13.

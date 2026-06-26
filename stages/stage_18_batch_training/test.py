@@ -1,4 +1,4 @@
-"""Tests for Stage 19: Mini-batch training.
+"""Tests for Stage 18: Mini-batch training.
 
 These tests verify the data-feeding layer on top of the stage_14 training stack
 (``MLP``, ``mse_loss``, ``SGD``, ``make_moons``) and the stage_08 ``Tensor``:

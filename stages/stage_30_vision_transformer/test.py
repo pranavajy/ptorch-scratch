@@ -1,4 +1,4 @@
-"""Tests for Stage 31: Vision Transformer.
+"""Tests for Stage 30: Vision Transformer.
 
 Checks the image-specific front end and head of a ViT (the parts this stage
 builds), plus the assembled forward pipeline:

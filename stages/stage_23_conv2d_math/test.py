@@ -1,4 +1,4 @@
-"""Stage 24 tests: convolution shape formulas, forward, and gradients.
+"""Stage 23 tests: convolution shape formulas, forward, and gradients.
 
 Run: pytest stage_23_conv2d_math/test.py
 

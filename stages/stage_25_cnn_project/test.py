@@ -1,4 +1,4 @@
-"""Tests for Stage 26: CNN classifier (project).
+"""Tests for Stage 25: CNN classifier (project).
 
 Verifies the composed convolutional classifier built on the prior stages:
 

@@ -1,4 +1,4 @@
-"""Tests for Stage 33: Capstone -- MNIST.
+"""Tests for Stage 32: Capstone -- MNIST.
 
 Covers the integration capstone that points the stage_31 ``mytorch`` framework
 at MNIST:

@@ -1,4 +1,4 @@
-"""Stage 28: Single-head scaled dot-product self-attention.
+"""Stage 27: Single-head scaled dot-product self-attention.
 
 Built on the stage_08 ``Tensor`` engine. For a sequence X (T, d_model):
     Q,K,V = X@W_q, X@W_k, X@W_v;  S = (Q@K.T)/sqrt(d_k) (+mask);

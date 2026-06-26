@@ -1,4 +1,4 @@
-"""Stage 22: Inverted dropout (train/eval-mode layer) on the stage_08 Tensor.
+"""Stage 21: Inverted dropout (train/eval-mode layer) on the stage_08 Tensor.
 
 Inverted dropout with keep prob ``p``:
     train:  m ~ Bernoulli(p) elementwise, y = (m * x) / p

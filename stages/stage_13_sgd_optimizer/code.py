@@ -1,4 +1,4 @@
-"""Stage 14: SGD optimizer.
+"""Stage 13: SGD optimizer.
 
 Factors the manual parameter-update ritual into a reusable ``Optimizer`` object
 matching the ``torch.optim`` interface. No new gradient to derive here.

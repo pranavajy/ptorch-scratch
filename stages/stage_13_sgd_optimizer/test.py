@@ -1,4 +1,4 @@
-"""Tests for Stage 14: SGD optimizer.
+"""Tests for Stage 13: SGD optimizer.
 
 These tests verify the optimizer mechanics on top of the ``Tensor`` engine from
 stage_08:

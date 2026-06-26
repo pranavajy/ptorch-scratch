@@ -1,4 +1,4 @@
-"""Stage 20: DataLoader.
+"""Stage 19: DataLoader.
 
 Packages stage_18's one-shot batch logic as reusable objects: an indexable
 ``Dataset``, a re-iterable ``DataLoader`` (iterator protocol, re-shuffles each

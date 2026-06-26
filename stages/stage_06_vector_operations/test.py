@@ -1,4 +1,4 @@
-"""Stage 7 tests: Vec operations + central-difference gradient checks.
+"""Stage 06 tests: Vec operations + central-difference gradient checks.
 
 Run: pytest stage_06_vector_operations/test.py
 

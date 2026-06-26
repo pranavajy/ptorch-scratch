@@ -1,4 +1,4 @@
-"""Stage 25: Conv2D (im2col + matmul), pooling, and Flatten, built on the
+"""Stage 24: Conv2D (im2col + matmul), pooling, and Flatten, built on the
 stage_08 autodiff ``Tensor``. Adds im2col/col2im, Conv2D, MaxPool2D, AvgPool2D,
 Flatten with hand-wired backward closures.
 """

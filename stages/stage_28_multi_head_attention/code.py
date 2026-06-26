@@ -1,4 +1,4 @@
-"""Stage 29: Multi-Head Attention (MHA).
+"""Stage 28: Multi-Head Attention (MHA).
 
 Runs ``h`` scaled-dot-product attention heads (each on a ``d_k = d_model // h``
 subspace) in parallel, concatenates them, and mixes with a learned ``W_o``.

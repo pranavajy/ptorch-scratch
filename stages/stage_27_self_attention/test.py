@@ -1,4 +1,4 @@
-"""Tests for Stage 28: Self-Attention.
+"""Tests for Stage 27: Self-Attention.
 
 Checks the forward construction of single-head scaled dot-product self-attention
 (shapes, row-stochastic attention weights, the 1/sqrt(d_k) scaling, the causal

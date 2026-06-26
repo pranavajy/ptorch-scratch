@@ -1,4 +1,4 @@
-"""Tests for Stage 13: Loss functions.
+"""Tests for Stage 12: Loss functions.
 
 Checks forward values against plain-NumPy reference losses and gradient-checks
 each loss with respect to its (differentiable) prediction / logits using central

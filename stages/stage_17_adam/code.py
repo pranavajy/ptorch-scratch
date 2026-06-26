@@ -1,4 +1,4 @@
-"""Stage 18: Adam (Adaptive Moment Estimation).
+"""Stage 17: Adam (Adaptive Moment Estimation).
 
 Top of the optimizer chain: imports the Optimizer base / SGD / Momentum from
 prior stages and adds RMSProp, Adam (momentum + 2nd-moment EMA + bias

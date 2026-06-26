@@ -1,4 +1,4 @@
-"""Tests for Stage 16: Weight initialization.
+"""Tests for Stage 15: Weight initialization.
 
 What these tests check:
   * Each initializer returns the right shape and an EMPIRICAL variance that

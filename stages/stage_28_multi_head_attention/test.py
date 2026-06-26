@@ -1,4 +1,4 @@
-"""Tests for Stage 29: Multi-Head Attention.
+"""Tests for Stage 28: Multi-Head Attention.
 
 MHA is built ON stage_27's single-head ``SelfAttention`` plus a learned output
 projection ``W_o``; every gradient flows through ``Tensor.backward()`` (stage_08),

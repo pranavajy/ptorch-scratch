@@ -1,4 +1,4 @@
-"""Tests for Stage 15: First training loop.
+"""Tests for Stage 14: First training loop.
 
 Covers the full loop and each piece feeding it:
   * datasets (make_moons / make_spiral) -- shapes, label set, determinism;

@@ -1,4 +1,4 @@
-"""Stage 23: Batch Normalization (1-D).
+"""Stage 22: Batch Normalization (1-D).
 
 Self-contained module with hand-written forward/backward on raw NumPy arrays (not
 the Tensor engine). Per feature: x_hat=(x-mu)/sqrt(var+eps); y=gamma*x_hat+beta.

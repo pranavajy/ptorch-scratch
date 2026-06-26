@@ -1,4 +1,4 @@
-"""Tests for Stage 22: Dropout.
+"""Tests for Stage 21: Dropout.
 
 Covers inverted dropout on top of the ``Tensor`` from stage_08 and the ``MLP``
 from stage_11:

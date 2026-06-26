@@ -1,4 +1,4 @@
-"""Stage 12: MLP + broadcasting-aware Tensor.
+"""Stage 11: MLP + broadcasting-aware Tensor.
 
 Two things ship here:
 

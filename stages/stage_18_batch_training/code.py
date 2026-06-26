@@ -1,4 +1,4 @@
-"""Stage 19: Mini-batch training.
+"""Stage 18: Mini-batch training.
 
 Additive on top of stage_14's full-batch driver: split the data into mini-batches
 and run forward/backward/step once per batch. Adds only the data-feeding layer

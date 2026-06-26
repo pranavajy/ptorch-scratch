@@ -1,4 +1,4 @@
-"""Stage 8 tests: Mat operations + central-difference gradient checks.
+"""Stage 07 tests: Mat operations + central-difference gradient checks.
 
 Run: pytest stage_07_matrix_operations/test.py
 

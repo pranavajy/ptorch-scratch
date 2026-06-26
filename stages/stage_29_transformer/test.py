@@ -1,4 +1,4 @@
-"""Stage 30 tests: Transformer block.
+"""Stage 29 tests: Transformer block.
 
 Covers:
   * LayerNorm forward: per-token standardization over the FEATURE axis (mean ~0,

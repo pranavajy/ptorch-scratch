@@ -1,4 +1,4 @@
-"""Stage 11: Dense / Linear layer.
+"""Stage 10: Dense / Linear layer.
 
 Fully-connected layer on top of stage_08's autodiff ``Tensor``:
 ``Z = X @ W + b`` with X:(B, n_in), W:(n_in, n_out), b:(n_out,), Z:(B, n_out).

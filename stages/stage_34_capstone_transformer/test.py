@@ -1,4 +1,4 @@
-"""Tests for Stage 35: Capstone -- tiny Transformer (char-level LM).
+"""Tests for Stage 34: Capstone -- tiny Transformer (char-level LM).
 
 Verifies the end-to-end integration: the tokenizer round-trips, ``get_batch``
 produces correctly-shifted (X, Y) windows, the model forward returns

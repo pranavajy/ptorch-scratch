@@ -1,4 +1,4 @@
-"""Stage 8: Matrix operations.
+"""Stage 07: Matrix operations.
 
 A `Mat` (2-D matrix of `Value` scalars) on top of the stage_05 scalar engine;
 gradients flow through `Value`. For C = A @ B: dL/dA = G @ B.T, dL/dB = A.T @ G.

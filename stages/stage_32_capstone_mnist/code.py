@@ -1,4 +1,4 @@
-"""Stage 33: Capstone -- MNIST.
+"""Stage 32: Capstone -- MNIST.
 
 Integration stage: read real MNIST off disk and train a stage_31 ``mytorch``
 MLP. No new gradient math, no new layer/loss/optimizer -- only the stage_31 API.

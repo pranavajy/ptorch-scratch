@@ -1,4 +1,4 @@
-"""Stage 31: Vision Transformer (ViT).
+"""Stage 30: Vision Transformer (ViT).
 
 Image front end + classifier head around the stage_29 Transformer encoder:
 patchify -> patch embed -> prepend class token -> + positional embeddings ->

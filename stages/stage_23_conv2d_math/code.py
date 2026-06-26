@@ -1,4 +1,4 @@
-"""Stage 24: Convolution mathematics (shape formulas + forward/backward by hand).
+"""Stage 23: Convolution mathematics (shape formulas + forward/backward by hand).
 
 Pure-function conv math (no autodiff, no layer class): output-size formulas,
 cross-correlation forward, im2col/col2im, and the three backward rules. NCHW

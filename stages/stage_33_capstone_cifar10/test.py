@@ -1,4 +1,4 @@
-"""Tests for Stage 34: Capstone -- CIFAR-10.
+"""Tests for Stage 33: Capstone -- CIFAR-10.
 
 Verifies the CIFAR-10 capstone built on the prior stages:
 

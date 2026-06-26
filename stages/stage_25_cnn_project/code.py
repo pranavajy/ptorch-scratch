@@ -1,4 +1,4 @@
-"""Stage 26: CNN classifier (project).
+"""Stage 25: CNN classifier (project).
 
 Compose prior building blocks into a small convolutional image classifier and
 train it end-to-end. No new layer math here -- this stage only wires imported

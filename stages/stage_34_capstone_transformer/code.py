@@ -1,4 +1,4 @@
-"""Stage 35: Capstone -- tiny Transformer (character-level language model).
+"""Stage 34: Capstone -- tiny Transformer (character-level language model).
 
 INTEGRATION ONLY: assemble a GPT-style char-LM from prior stages (mytorch
 framework, TransformerBlock + LayerNorm, causal mask, cross-entropy). No

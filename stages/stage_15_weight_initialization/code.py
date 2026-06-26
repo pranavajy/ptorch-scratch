@@ -1,4 +1,4 @@
-"""Stage 16: Weight initialization.
+"""Stage 15: Weight initialization.
 
 Turns the variance-propagation rule Var(z) = n_in * Var(W) * Var(x) into the
 Xavier/Glorot (tanh/linear) and He/Kaiming (relu) schemes plus a harness that

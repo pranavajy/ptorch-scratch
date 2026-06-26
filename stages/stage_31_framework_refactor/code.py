@@ -1,4 +1,4 @@
-"""Stage 32: Framework refactor -- the ``mytorch`` mini-framework.
+"""Stage 31: Framework refactor -- the ``mytorch`` mini-framework.
 
 Assembles stages 1-31 into one PyTorch-shaped package (no new math). Adds the
 ``Module``/``Parameter`` object layer and re-exports everything as ``mytorch``.

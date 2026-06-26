@@ -1,4 +1,4 @@
-"""Tests for Stage 17: Momentum.
+"""Tests for Stage 16: Momentum.
 
 These tests verify the momentum optimizer built on ``SGD`` from ``stage_13``:
 

@@ -1,4 +1,4 @@
-"""Tests for Stage 20: DataLoader.
+"""Tests for Stage 19: DataLoader.
 
 Covers the data-feeding plumbing built on top of stage_18:
   * Dataset       -- len / getitem (int, slice, index-array), shape mismatch

@@ -1,4 +1,4 @@
-"""Tests for Stage 21: L1 & L2 regularization.
+"""Tests for Stage 20: L1 & L2 regularization.
 
 The penalties are differentiable ``Tensor`` functions, so we gradcheck them with
 central differences: for a scalar penalty ``R`` and a weight ``Tensor`` ``w``,

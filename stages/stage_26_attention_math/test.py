@@ -1,4 +1,4 @@
-"""Tests for Stage 27: Attention mathematics.
+"""Tests for Stage 26: Attention mathematics.
 
 Checks the scaled dot-product attention forward against a naive per-query loop
 reference, verifies softmax stability and the row-sum property, and gradient-

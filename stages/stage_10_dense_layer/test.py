@@ -1,4 +1,4 @@
-"""Tests for Stage 11: Dense / Linear layer.
+"""Tests for Stage 10: Dense / Linear layer.
 
 These tests verify the forward shapes of a fully-connected layer (single-vector
 and batched, with and without bias) and gradient-check a scalar reduction of its

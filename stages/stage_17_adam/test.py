@@ -1,4 +1,4 @@
-"""Tests for Stage 18: Adam (+ the RMSProp / AdamW it builds on).
+"""Tests for Stage 17: Adam (+ the RMSProp / AdamW it builds on).
 
 This stage sits on top of the optimizer chain. ``Optimizer`` (base) and ``SGD``
 come from ``stage_13`` and ``Momentum`` from ``stage_16``; this stage's

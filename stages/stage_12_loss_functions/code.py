@@ -1,4 +1,4 @@
-"""Stage 13: Loss functions (mse, mae, cross-entropy) + sum/mean reductions.
+"""Stage 12: Loss functions (mse, mae, cross-entropy) + sum/mean reductions.
 
 This stage does two things on top of the autodiff ``Tensor``:
 

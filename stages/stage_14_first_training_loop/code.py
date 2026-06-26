@@ -1,4 +1,4 @@
-"""Stage 15: First training loop.
+"""Stage 14: First training loop.
 
 Wires the imported Tensor/MLP/mse_loss/SGD into the canonical learning loop
 (forward -> loss -> backward -> step -> zero_grad) plus toy datasets, an

@@ -1,4 +1,4 @@
-"""Tests for Stage 6: Scalar backprop engine.
+"""Tests for Stage 05: Scalar backprop engine.
 
 We verify:
   - forward values of every op,

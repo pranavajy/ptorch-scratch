@@ -1,4 +1,4 @@
-"""Stage 6: Scalar reverse-mode autodiff engine.
+"""Stage 05: Scalar reverse-mode autodiff engine.
 
 Imports stage_04's complete reverse-mode ``Value`` (graph + per-op ``_backward``
 + ``backward()``) and subclasses it, adding only the new ops (tanh, exp, relu),

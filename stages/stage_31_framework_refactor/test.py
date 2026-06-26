@@ -1,4 +1,4 @@
-"""Tests for Stage 32: Framework refactor (``mytorch``).
+"""Tests for Stage 31: Framework refactor (``mytorch``).
 
 This stage introduces no new math, so the testing has two halves:
 
