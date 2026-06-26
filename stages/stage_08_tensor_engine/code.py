@@ -1,4 +1,4 @@
-"""Stage 09: Tensor engine -- one N-dimensional reverse-mode autodiff class.
+"""Stage 08: Tensor engine -- one N-dimensional reverse-mode autodiff class.
 
 `Tensor` collapses the scalar/Vec/Mat graphs (stages 06-08) onto a single
 NumPy-backed node (one data array + one grad array). Every later stage imports
@@ -96,11 +96,17 @@ class Tensor:
     def __matmul__(self, other: Operand) -> "Tensor":
         """Matrix product z = self @ other (the ``@`` operator).
 
-        For z = A @ B with upstream grad G: dL/dA = G @ B.T, dL/dB = A.T @ G.
-        Works for 2-D operands and the (n,)@(n,m) / (m,n)@(n,) vector cases the
-        neuron/dense layers use. No broadcasting beyond what NumPy's @ gives;
-        equal-rank operands only (general broadcasting backward is stage_11)."""
-        raise NotImplementedError("TODO: implement matmul + its _backward (G@B.T, A.T@G)")
+        For 2-D z = A @ B with upstream grad G: dL/dA = G @ B.T, dL/dB = A.T @ G.
+
+        Must also cover the 1-D operand forms the neuron / dense layers use:
+        (n,)@(n,) -> scalar, (n,)@(n,m) -> (m,), and (b,n)@(n,) -> (b,) batched.
+        A 1-D operand makes the bare G@B.T / A.T@G rule wrong (``.T`` is a no-op
+        on 1-D, and the right grad is an outer product). The clean fix: promote
+        each 1-D operand to 2-D (left -> (1,n) row, right -> (n,1) column),
+        apply the 2-D rule above, then squeeze the inserted axis back out so each
+        grad matches its operand's original shape. (No general broadcasting
+        beyond this 1-D<->2-D promotion; that arrives in stage_11.)"""
+        raise NotImplementedError("TODO: matmul + _backward; promote 1-D operands, then G@B.T / A.T@G")
 
     # ops derived from the primitives above (no new _backward)
     def __neg__(self) -> "Tensor":

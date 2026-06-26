@@ -160,8 +160,11 @@ sums-to-scalar when the operand is a 0-d constant.
 - **Elementwise methods**: `relu`, `tanh`, `exp`, `log` — each its own `_backward` using the rules in §2
   ($g\odot\mathbf 1[x>0]$, $g\odot(1-z^2)$, $g\odot z$, $g\oslash x$).
 - **Matmul**: `__matmul__` (the `@` operator) pushing `G @ B.T` to the left operand and `A.T @ G` to the
-  right — the rule you derived in §2. Handle 2-D plus the `(n,)@(n,m)` and `(m,n)@(n,)` vector forms the
-  neuron / dense layer use.
+  right — the rule you derived in §2. That rule is exact for 2-D operands; also handle the 1-D forms the
+  neuron / dense layer use (`(n,)@(n,)`→scalar, `(n,)@(n,m)`→`(m,)`, batched `(b,n)@(n,)`→`(b,)`). For a
+  1-D operand the bare formula is wrong — `.T` is a no-op on 1-D and the true gradient is an outer
+  product — so **promote each 1-D operand to 2-D** (left→`(1,n)` row, right→`(n,1)` column), apply the
+  `G@B.T` / `A.T@G` rule, then squeeze the inserted axis back so each grad matches its operand's shape.
 - **Autodiff**: `backward()` — (1) topo-sort via DFS over `_prev`, (2) seed `self.grad = np.ones_like(self.data)`,
   (3) walk reversed topo order calling each `_backward`. Gradients **accumulate** with `+=` so a tensor
   reused on several paths (e.g. `y = x*x + x`) sums its contributions. `zero_grad()` resets `grad`.
