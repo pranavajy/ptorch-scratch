@@ -12,7 +12,7 @@ pull symbols out of an earlier stage:
     Tensor = stage_import("stage_09", "Tensor")
 
     # grab several at once (returns them in order)
-    MLP, mse_loss, SGD = stage_import("stage_15", "MLP", "mse_loss", "SGD")
+    MLP, mse_loss, SGD = stage_import("stage_16", "MLP", "mse_loss", "SGD")
 
 Design goals
 ------------
@@ -121,7 +121,7 @@ def stage_import(stage_prefix: str, *names: str) -> Any:
     ----------
     stage_prefix:
         A prefix that uniquely identifies the source stage directory, e.g.
-        ``"stage_09"`` or ``"stage_14"``.
+        ``"stage_09"`` or ``"stage_15"``.
     *names:
         One or more attribute names to pull out of that stage's module.
 

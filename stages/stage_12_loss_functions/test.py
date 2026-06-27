@@ -1,4 +1,7 @@
-"""Tests for Stage 12: Loss functions.
+"""Tests for Stage 12: Loss functions (single example -- no batch axis).
+
+softmax / log_softmax / cross_entropy here take ONE example: a (C,) logit vector and
+a single label. The batched (B, C) versions are tested in stage_13.
 
 Checks forward values against plain-NumPy reference losses and gradient-checks
 each loss with respect to its (differentiable) prediction / logits using central
@@ -51,7 +54,6 @@ try:
         log_softmax,
         mae_loss,
         mse_loss,
-        one_hot,
         softmax,
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
@@ -75,6 +77,13 @@ def as_array(t):
 def loss_value(t):
     """Scalar python float held by a (0-d) loss Tensor."""
     return float(as_array(t).reshape(-1)[0]) if as_array(t).size == 1 else float(np.sum(as_array(t)))
+
+
+def _onehot_vec(t, num_classes):
+    """Test-local one-hot for ONE label: int t -> (C,) vector with 1.0 at t."""
+    y = np.zeros(num_classes, dtype=float)
+    y[int(t)] = 1.0
+    return y
 
 
 def central_diff(f, x, eps=EPS):
@@ -195,16 +204,6 @@ def test_mean_gradcheck_against_central_diff():
 
 
 # =========================================================================== #
-# one_hot helper
-# =========================================================================== #
-def test_one_hot_shape_and_values():
-    oh = one_hot([0, 2, 1], num_classes=3)
-    assert oh.shape == (3, 3)
-    expected = np.array([[1, 0, 0], [0, 0, 1], [0, 1, 0]], dtype=float)
-    assert np.allclose(oh, expected), f"one_hot wrong:\n{oh}"
-
-
-# =========================================================================== #
 # MSE
 # =========================================================================== #
 def test_mse_forward_matches_numpy():
@@ -282,78 +281,77 @@ def test_mae_grad_is_sign_over_n():
 
 
 # =========================================================================== #
-# softmax / log-softmax
+# softmax / log-softmax  (single example: (C,) -> (C,))
 # =========================================================================== #
-def test_softmax_rows_sum_to_one():
-    z = RNG.normal(size=(5, 7))
+def test_softmax_sums_to_one():
+    z = RNG.normal(size=7)
     p = as_array(softmax(Tensor(z)))
-    assert np.allclose(p.sum(axis=1), 1.0, atol=ATOL), f"rows sum: {p.sum(axis=1)}"
+    assert np.isclose(p.sum(), 1.0, atol=ATOL), f"sum: {p.sum()}"
     assert np.all(p >= 0.0), "softmax must be non-negative"
 
 
 def test_softmax_matches_numpy_reference():
-    z = RNG.normal(size=(4, 6))
+    z = RNG.normal(size=6)
     p = as_array(softmax(Tensor(z)))
-    e = np.exp(z - z.max(axis=1, keepdims=True))
-    ref = e / e.sum(axis=1, keepdims=True)
+    e = np.exp(z - z.max())
+    ref = e / e.sum()
     assert np.allclose(p, ref, atol=ATOL), f"softmax mismatch:\n{p}\n{ref}"
 
 
 def test_log_softmax_matches_log_of_softmax():
-    z = RNG.normal(size=(4, 5))
+    z = RNG.normal(size=5)
     lp = as_array(log_softmax(Tensor(z)))
     ref = np.log(as_array(softmax(Tensor(z))))
     assert np.allclose(lp, ref, atol=ATOL), f"log_softmax mismatch:\n{lp}\n{ref}"
 
 
 def test_softmax_numerically_stable_large_logits():
-    z = np.array([[1000.0, 1001.0, 1002.0]])
+    z = np.array([1000.0, 1001.0, 1002.0])
     p = as_array(softmax(Tensor(z)))
     assert np.all(np.isfinite(p)), "softmax overflowed on large logits"
-    e = np.exp(z - z.max(axis=1, keepdims=True))
-    ref = e / e.sum(axis=1, keepdims=True)
+    e = np.exp(z - z.max())
+    ref = e / e.sum()
     assert np.allclose(p, ref, atol=ATOL)
 
 
 def test_log_softmax_stable_large_logits():
-    z = np.array([[1000.0, 1001.0, 1002.0]])
+    z = np.array([1000.0, 1001.0, 1002.0])
     lp = as_array(log_softmax(Tensor(z)))
     assert np.all(np.isfinite(lp)), "log_softmax produced inf/nan on large logits"
 
 
 # =========================================================================== #
-# cross-entropy
+# cross-entropy  (single example: (C,) logits + one label -> scalar)
 # =========================================================================== #
 def test_cross_entropy_forward_matches_numpy():
-    z = RNG.normal(size=(4, 5))
-    t = np.array([0, 2, 4, 1])
+    z = RNG.normal(size=5)
+    t = 2
     got = loss_value(cross_entropy_loss(Tensor(z), t))
-    # reference
-    e = np.exp(z - z.max(axis=1, keepdims=True))
-    p = e / e.sum(axis=1, keepdims=True)
-    ref = float(np.mean(-np.log(p[np.arange(4), t])))
+    e = np.exp(z - z.max())
+    p = e / e.sum()
+    ref = float(-np.log(p[t]))
     assert np.isclose(got, ref, atol=ATOL), f"CE forward: got {got}, want {ref}"
 
 
-def test_cross_entropy_accepts_onehot_targets():
-    z = RNG.normal(size=(3, 4))
-    t_idx = np.array([0, 3, 1])
-    t_oh = one_hot(t_idx, 4)
+def test_cross_entropy_accepts_onehot_target():
+    z = RNG.normal(size=4)
+    t_idx = 3
+    t_oh = _onehot_vec(t_idx, 4)
     a = loss_value(cross_entropy_loss(Tensor(z), t_idx))
     b = loss_value(cross_entropy_loss(Tensor(z), t_oh))
     assert np.isclose(a, b, atol=ATOL), f"index vs one-hot CE differ: {a} vs {b}"
 
 
 def test_cross_entropy_stable_large_logits():
-    z = np.array([[1000.0, 1001.0, 1002.0]])
-    t = np.array([2])
+    z = np.array([1000.0, 1001.0, 1002.0])
+    t = 2
     L = loss_value(cross_entropy_loss(Tensor(z), t))
     assert np.isfinite(L), "cross-entropy overflowed on large logits"
 
 
 def test_cross_entropy_gradcheck_wrt_logits():
-    z_np = RNG.normal(size=(4, 5))
-    t = np.array([0, 2, 4, 1])
+    z_np = RNG.normal(size=5)
+    t = 2
 
     g_analytic = analytic_grad(cross_entropy_loss, z_np, t)
 
@@ -366,18 +364,17 @@ def test_cross_entropy_gradcheck_wrt_logits():
     )
 
 
-def test_cross_entropy_grad_is_p_minus_y_over_b():
-    """The fused gradient must equal (softmax(logits) - onehot) / B."""
-    z_np = RNG.normal(size=(4, 5))
-    t = np.array([0, 2, 4, 1])
-    B = z_np.shape[0]
+def test_cross_entropy_grad_is_p_minus_y():
+    """For one example the gradient w.r.t. logits is exactly softmax(logits) - onehot."""
+    z_np = RNG.normal(size=5)
+    t = 2
 
     g_analytic = analytic_grad(cross_entropy_loss, z_np, t)
 
     p = as_array(softmax(Tensor(z_np)))
-    y = one_hot(t, z_np.shape[1])
-    expected = (p - y) / B
+    y = _onehot_vec(t, z_np.shape[0])
+    expected = p - y
 
     assert np.allclose(g_analytic, expected, atol=ATOL), (
-        f"CE grad != (p - y)/B:\n analytic={g_analytic}\n expected={expected}"
+        f"CE grad != (p - y):\n analytic={g_analytic}\n expected={expected}"
     )

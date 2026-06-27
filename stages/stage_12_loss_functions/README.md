@@ -1,16 +1,21 @@
-# Stage 12: Loss functions
+# Stage 12: Loss functions (a single example)
+
+> This is the first of two loss stages. Here every loss is for **one example at a time** — no batch
+> axis — so the shapes stay small and each loss is a single scalar you can reason about directly.
+> [stage_13](../stage_13_loss_functions_batched/) then lifts the classification losses to a whole batch
+> of `(B, C)` logits. Learning the softmax / cross-entropy idea on one vector first keeps it separate
+> from the batching bookkeeping.
 
 ## What a loss is
 
-Training a model means making its predictions $\hat y$ match the targets $y$. To do that with gradient
-descent you need a single number that says *how wrong the model currently is* — a smaller number means a
-better model. That number is the **loss**.
+Training a model means making its prediction $\hat y$ ("y-hat", the model's output) match the target $y$
+(the correct answer). To do that with gradient descent you need a single number that says *how wrong the
+model currently is* — a smaller number means a better model. That number is the **loss**.
 
-Formally a loss is a function $L(\hat y, y) \to \mathbb{R}$. It takes a whole batch of predictions and
-targets and returns one scalar by combining the per-example errors — here always with the **mean**, so
-the loss does not grow just because the batch is larger. Because the loss is built entirely from
-`Tensor` operations, calling `loss.backward()` walks the graph and fills in
-$\partial L / \partial(\text{parameters})$ for free; the optimizer then steps the parameters in the
+Formally a loss is a function $L(\hat y, y) \to \mathbb{R}$: it takes the prediction and the target and
+returns one scalar. Because the loss is built entirely from `Tensor` operations, calling
+`loss.backward()` walks the graph and fills in $\partial L / \partial(\text{parameters})$ (the gradient
+of the loss with respect to each parameter) for free; the optimizer then steps the parameters in the
 direction that lowers $L$.
 
 This stage builds the three losses you will use for the rest of the curriculum:
@@ -20,6 +25,13 @@ This stage builds the three losses you will use for the rest of the curriculum:
   raw scores into probabilities.
 
 Everything is written as plain functions over the broadcast-capable `Tensor` from `stage_11`.
+
+**Symbols used below:** $\hat y, y$ — prediction and target (regression). $N$ — number of elements being
+averaged. For classification: $z$ — the logit vector (raw scores), $C$ — number of classes, $z_c$ — the
+score of class $c$ (the index $k$ is the same kind of class index, used when summing over all classes).
+$p$ — the probability vector from softmax, $p_c$ — probability of class $c$. $t$ — the true class index,
+so $p_t$ is the probability the model gave the correct class. $y$ — the one-hot target vector ($y_c = 1$
+for $c = t$, else $0$).
 
 ## Reductions come first
 
@@ -91,13 +103,14 @@ $$p_c = \frac{e^{z_c}}{\sum_k e^{z_k}}.$$
 
 Computed naively this overflows: a logit of `1000` makes $e^{z_c}$ infinite. The fix uses the fact that
 shifting every logit by the same constant leaves softmax unchanged (the shift cancels top and bottom).
-Subtract the row max $m = \max_k z_k$, so the largest exponent is $e^{0}=1$ and nothing overflows:
+Subtract the largest logit $m = \max_k z_k$, so the biggest exponent is $e^{0}=1$ and nothing overflows:
 
 $$p_c = \frac{e^{z_c - m}}{\sum_k e^{z_k - m}}.$$
 
-The same shift gives a stable way to compute the log of the normalizer — the **log-sum-exp** identity:
+The same shift gives a stable way to compute the log of the normalizer $\sum_k e^{z_k}$ — the
+**log-sum-exp** identity (written $\mathrm{LSE}(z)$):
 
-$$\log \sum_k e^{z_k} = m + \log \sum_k e^{z_k - m}.$$
+$$\mathrm{LSE}(z) = \log \sum_k e^{z_k} = m + \log \sum_k e^{z_k - m}.$$
 
 The max $m$ is treated as a **constant** during backprop (no gradient flows through the shift); it only
 exists for numerical stability.
@@ -118,12 +131,14 @@ with log-sum-exp. Using $\log p_t = z_t - \log\sum_k e^{z_k}$:
 $$L = \mathrm{LSE}(z) - z_t = \Big(m + \log \sum_k e^{z_k - m}\Big) - z_t.$$
 
 The reward for going through softmax + log is the famously clean gradient — the predicted probabilities
-minus the true label, averaged over the batch of size $B$:
+minus the true label:
 
-$$\frac{\partial L}{\partial z_c} = \frac{p_c - y_c}{B}.$$
+$$\frac{\partial L}{\partial z_c} = p_c - y_c.$$
 
 Working out *why* the softmax Jacobian and the $\log$ combine into this simple $p - y$ is the whole point
 of the stage — build the loss from `log_softmax` and let `backward()` reproduce it, do not hard-code it.
+(In [stage_13](../stage_13_loss_functions_batched/) the same gradient appears as $(p - y)/B$ once you
+average over a batch of $B$ examples.)
 
 ## Watch
 
@@ -133,9 +148,11 @@ of the stage — build the loss from `log_softmax` and let `backward()` reproduc
 ## Cumulative build
 
 Import the `Tensor` from `stage_11` via `dlfs.stage_import` and **subclass** it to add the `sum` / `mean`
-reduction ops (with correct backward). On top of those reductions, add the losses `mse_loss`,
-`mae_loss`, and `cross_entropy_loss` (plus `softmax` / `log_softmax` via log-sum-exp and the `one_hot`
-helper). This stage is where reductions enter the engine — not just the losses.
+reduction ops (with correct backward). On top of those reductions, add the single-example losses
+`mse_loss`, `mae_loss`, and `cross_entropy_loss` (plus `softmax` / `log_softmax` via log-sum-exp). How
+`cross_entropy_loss` turns one integer label into something it can multiply against the `(C,)` log-probs
+(a one-hot vector, an index lookup, or whatever you choose) is left to you. This stage is where reductions
+enter the engine — not just the losses.
 
 ## Exercise
 
@@ -149,18 +166,18 @@ ops so gradients flow through `Tensor.backward()` — never hand-write a `.grad`
   `np.mean`; backward expands the upstream grad back to the input shape over the reduced axes (mean also
   divides by the reduced count $N$).
 - `mse_loss(pred, target) -> Tensor`: mean of $(\hat y - y)^2$ over all elements; scalar `Tensor`.
-  `pred` / `target` are `Tensor` / array-like of equal shape `(N,)` or `(B, D)`.
+  `pred` / `target` are `Tensor` / array-like of equal shape (e.g. `(N,)`).
 - `mae_loss(pred, target) -> Tensor`: mean of $|\hat y - y|$; scalar `Tensor`. Build `abs` from `Tensor`
   ops (e.g. $|d| = \mathrm{relu}(d) + \mathrm{relu}(-d)$) — no autodiff helper.
-- `log_softmax(logits) -> Tensor`: `(B, C)` logits in, `(B, C)` of $\log p$ out, via stable log-sum-exp
-  (subtract the per-row max as a constant — no grad through the shift). Equals
-  `logits - logsumexp(logits, axis=1, keepdims=True)`.
-- `softmax(logits) -> Tensor`: `(B, C)` probabilities; rows sum to 1. May be `exp(log_softmax(...))`.
-- `cross_entropy_loss(logits, targets) -> Tensor`: `logits` `(B, C)`; `targets` either a 1-D array of
-  `B` integer class indices **or** a `(B, C)` one-hot `Tensor` / array. Return the scalar mean
-  $-\frac{1}{B}\sum_b \log p_{b,t_b}$. Build it from `log_softmax` so the gradient is `(p - y)/B`.
+- `log_softmax(logits) -> Tensor`: a `(C,)` logit vector in, `(C,)` of $\log p$ out, via stable
+  log-sum-exp (subtract the max logit as a constant — no grad through the shift). Equals
+  `logits - logsumexp(logits)`.
+- `softmax(logits) -> Tensor`: a `(C,)` probability vector; entries sum to 1. May be `exp(log_softmax(...))`.
+- `cross_entropy_loss(logits, target) -> Tensor`: `logits` `(C,)`; `target` either a single integer class
+  index `t` **or** a `(C,)` one-hot / soft-label vector. Return the scalar $-\log p_t$ (equivalently
+  $-\sum_c y_c \log p_c$). Build it from `log_softmax` so the gradient is `p - y`.
 
-Inputs are coerced to `Tensor` when needed; all batch reductions use the **mean**.
+Inputs are coerced to `Tensor` when needed.
 
 ## Done when
 
@@ -168,8 +185,8 @@ Inputs are coerced to `Tensor` when needed; all batch reductions use the **mean*
 - `Tensor.sum` / `Tensor.mean` work with and without `axis` and with `keepdims`; their backward
   gradchecks against central differences (e.g. `f = (x*x).sum()` has analytic grad `2x`; `mean` grad is
   all `1/N`).
-- Forward values match NumPy reference losses; softmax rows sum to 1; cross-entropy is stable for logits
-  like `[1000, 1001, 1002]` (no `inf` / `nan`).
+- Forward values match NumPy reference losses; the softmax vector sums to 1; cross-entropy is stable for
+  logits like `[1000, 1001, 1002]` (no `inf` / `nan`).
 - Central-difference gradcheck of each loss w.r.t. its prediction / logits matches the analytic
   `Tensor.grad` within `atol ~ 1e-6` (MAE checked away from the kink).
-- Cross-entropy gradient w.r.t. logits equals `(softmax(logits) - onehot(targets)) / B`.
+- Cross-entropy gradient w.r.t. logits equals `softmax(logits) - onehot(target)`.

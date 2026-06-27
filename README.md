@@ -24,7 +24,7 @@ pytest stage_xx/test.py
 
 Each stage builds on the code from prior stages (e.g. `Value` from `stage_05`, `Tensor` from `stage_08`).
 
-## The 34 stages
+## The 35 stages
 
 | # | Stage | What you build |
 |---|-------|----------------|
@@ -39,29 +39,30 @@ Each stage builds on the code from prior stages (e.g. `Value` from `stage_05`, `
 | 09 | Neuron | A single learnable neuron `y = phi(x @ w + b)` on the `Tensor`. |
 | 10 | Dense Layer | Vectorized fully-connected layer `Z = X @ W + b`. |
 | 11 | MLP | Stack `Dense` layers with activations between them. |
-| 12 | Loss Functions | MSE/MAE/cross-entropy (+ stable softmax) and `sum`/`mean` reductions. |
-| 13 | SGD Optimizer | The `Optimizer`/`SGD` update step abstraction. |
-| 14 | First Training Loop | Wire MLP + loss + SGD into the canonical learn loop. |
-| 15 | Weight Initialization | Xavier/Glorot and He/Kaiming init, and why scale matters. |
-| 16 | Momentum | SGD with momentum. |
-| 17 | Adam | RMSProp/Adam with bias correction and weight decay. |
-| 18 | Batch Training | Minibatching, epochs, shuffling; gradient-variance intuition. |
-| 19 | DataLoader | `Dataset`/`DataLoader` batching abstraction. |
-| 20 | Regularization | L2 / weight decay; train vs eval mode. |
-| 21 | Dropout | Dropout forward + backward; inverted scaling. |
-| 22 | BatchNorm | Batch normalization forward + backward by hand. |
-| 23 | Conv2D Math | Convolution arithmetic and gradients via im2col. |
-| 24 | Conv2D Implementation | `Conv2D`/pooling/flatten as `Tensor` layers. |
-| 25 | CNN Project | Stack conv/pool/linear; train on image data. |
-| 26 | Attention Math | Scaled dot-product attention forward + backward (pure NumPy). |
-| 27 | Self-Attention | Self-attention on the `Tensor` autodiff engine. |
-| 28 | Multi-Head Attention | Split/concat heads; the full MHA module. |
-| 29 | Transformer | Residuals + LayerNorm + FFN; a full Transformer block. |
-| 30 | Vision Transformer | Patch embeddings + Transformer for image classification. |
-| 31 | Framework Refactor | Package it all into a clean PyTorch-like `Module`/`Parameter` API. |
-| 32 | Capstone: MNIST | End-to-end MNIST classifier. |
-| 33 | Capstone: CIFAR-10 | End-to-end CIFAR-10 classifier. |
-| 34 | Capstone: Transformer | End-to-end Transformer language model. |
+| 12 | Loss Functions | Single-example MSE/MAE/cross-entropy (+ stable softmax) and `sum`/`mean` reductions. |
+| 13 | Loss Functions (Batched) | Lift softmax/cross-entropy to a `(B, C)` batch; mean over the batch. |
+| 14 | SGD Optimizer | The `Optimizer`/`SGD` update step abstraction. |
+| 15 | First Training Loop | Wire MLP + loss + SGD into the canonical learn loop. |
+| 16 | Weight Initialization | Xavier/Glorot and He/Kaiming init, and why scale matters. |
+| 17 | Momentum | SGD with momentum. |
+| 18 | Adam | RMSProp/Adam with bias correction and weight decay. |
+| 19 | Batch Training | Minibatching, epochs, shuffling; gradient-variance intuition. |
+| 20 | DataLoader | `Dataset`/`DataLoader` batching abstraction. |
+| 21 | Regularization | L2 / weight decay; train vs eval mode. |
+| 22 | Dropout | Dropout forward + backward; inverted scaling. |
+| 23 | BatchNorm | Batch normalization forward + backward by hand. |
+| 24 | Conv2D Math | Convolution arithmetic and gradients via im2col. |
+| 25 | Conv2D Implementation | `Conv2D`/pooling/flatten as `Tensor` layers. |
+| 26 | CNN Project | Stack conv/pool/linear; train on image data. |
+| 27 | Attention Math | Scaled dot-product attention forward + backward (pure NumPy). |
+| 28 | Self-Attention | Self-attention on the `Tensor` autodiff engine. |
+| 29 | Multi-Head Attention | Split/concat heads; the full MHA module. |
+| 30 | Transformer | Residuals + LayerNorm + FFN; a full Transformer block. |
+| 31 | Vision Transformer | Patch embeddings + Transformer for image classification. |
+| 32 | Framework Refactor | Package it all into a clean PyTorch-like `Module`/`Parameter` API. |
+| 33 | Capstone: MNIST | End-to-end MNIST classifier. |
+| 34 | Capstone: CIFAR-10 | End-to-end CIFAR-10 classifier. |
+| 35 | Capstone: Transformer | End-to-end Transformer language model. |
 
 ## Expected effort
 
