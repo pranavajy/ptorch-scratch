@@ -11,8 +11,6 @@ from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 from dlfs import stage_import
 
 # Framework pieces built in earlier stages, re-exported under canonical names.
@@ -111,6 +109,7 @@ def train(
 
 def plot_loss(history: Sequence[float], path: Optional[str] = None):
     """Plot training loss vs epoch; save to path if given. Returns the Figure."""
+    import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
     ax.plot(range(1, len(history) + 1), history)
     ax.set_xlabel("epoch")
