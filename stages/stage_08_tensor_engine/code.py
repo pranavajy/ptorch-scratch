@@ -58,6 +58,17 @@ class Tensor:
         """Shape of the underlying data array."""
         raise NotImplementedError("TODO: return self.data.shape")
 
+    def reshape(self, *shape: int) -> "Tensor":
+        """Return a Tensor viewing this data under a new shape. z = self.reshape(shape).
+
+        Pure rearrangement -- no entry is created, destroyed, or combined, so the
+        chain rule is just the inverse rearrangement: each upstream grad entry
+        belongs to exactly one input entry. Forward `self.data.reshape(shape)`;
+        backward reshape `out.grad` back to `self.data.shape` and accumulate.
+        Accepts dims as varargs (`t.reshape(2, 3)`) or one tuple (`t.reshape((2, 3))`),
+        and a `-1` placeholder NumPy infers (`t.reshape(-1)` flattens)."""
+        raise NotImplementedError("TODO: reshape forward + _backward (reshape grad back to self.shape)")
+
     @staticmethod
     def _accumulate(grad_into: "Tensor", incoming: np.ndarray) -> None:
         """Add `incoming` into grad_into.grad; sum-to-scalar if grad_into is 0-d
