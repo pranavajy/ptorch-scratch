@@ -160,6 +160,16 @@ def test_shape_property():
     assert t.shape == (2, 3, 4)
 
 
+def test_data_is_assignable():
+    # Downstream code (e.g. Neuron training / gradcheck) overwrites params in
+    # place via `t.data = new_array`. The `data` property must expose a setter;
+    # a read-only property raises "property 'data' has no setter".
+    t = Tensor([1.0, 2.0])
+    t.data = np.array([3.0, 4.0])
+    assert np.allclose(t.data, [3.0, 4.0])
+    assert isinstance(t.data, np.ndarray) and t.data.dtype == np.float64
+
+
 def test_repr_mentions_data_and_grad():
     r = repr(Tensor([1.0, 2.0]))
     assert "data" in r and "grad" in r
@@ -324,6 +334,22 @@ def test_matmul_vector_cases():
     assert np.allclose(y.data, x.data @ W.data)
     y.backward()
     assert x.grad.shape == x.data.shape and W.grad.shape == W.data.shape
+
+
+def test_matmul_vector_dot_produces_scalar_backward():
+    # (n,) @ (n,) -> 0-d scalar : the Neuron's `x @ w` single-example pre-activation.
+    # backward must NOT do `result.grad @ other.data.T` blindly: when result is 0-d
+    # that crashes ("Input operand 0 does not have enough dimensions"). For a dot
+    # product z = a . b the grads are dz/da = b, dz/db = a (seeded with ones -> 1.0).
+    a = Tensor([1.0, 2.0, 3.0])
+    b = Tensor([4.0, 5.0, 6.0])
+    z = a @ b                             # 0-d
+    assert z.shape == ()
+    assert np.isclose(float(z.data), 1 * 4 + 2 * 5 + 3 * 6)
+    z.backward()                          # seeds G = 1.0 (0-d)
+    assert np.allclose(a.grad, b.data), "dL/da of a.b must equal b"
+    assert np.allclose(b.grad, a.data), "dL/db of a.b must equal a"
+    assert a.grad.shape == a.data.shape and b.grad.shape == b.data.shape
 
 
 # --------------------------------------------------------------------------- #
