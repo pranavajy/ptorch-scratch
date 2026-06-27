@@ -67,6 +67,12 @@ Each stage builds on the code from prior stages (e.g. `Value` from `stage_05`, `
 
 Roughly **150-250 hours** end to end, depending on background.
 
+## AI / Agent setup
+
+This repo ships a **tutor prompt** at [`tutor_skill.md`](tutor_skill.md) — a Socratic study partner that guides your thinking with hints and questions but **won't hand you the solution** (the point is that *you* write every gradient). It asks which stage you're on, reads that stage's files, and helps you reason to the answer.
+
+Works with any AI coding agent (Cursor, Copilot, Codex, Claude, Gemini, local models, …): give the agent `tutor_skill.md` as its system prompt / custom instructions, then tell it which stage you're stuck on. (For [Claude Code](https://claude.com/claude-code), drop `tutor_skill.md` into `.claude/skills/tutor/SKILL.md` to run it as the `/tutor` slash command.)
+
 ## Community
 
 Questions, help, and updates: [r/pytorch_from_scratch](https://www.reddit.com/r/pytorch_from_scratch/).
