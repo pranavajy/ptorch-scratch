@@ -87,18 +87,6 @@ class Tensor(Stage11_Tensor):
         raise NotImplementedError("Tensor.mean")
 
 
-def _as_tensor(x) -> "Tensor":
-    """Return x as THIS stage's Tensor (the one with reductions).
-
-    Coercing to this Tensor (not the bare base) is what lets a loss call
-    ``.sum()`` / ``.mean()`` on a coerced input.
-    """
-    # TODO: if x is already an instance of this stage's Tensor, return it;
-    #       otherwise wrap its data in Tensor(...) so the reduction ops are
-    #       available on the result.
-    raise NotImplementedError("_as_tensor")
-
-
 def one_hot(targets, num_classes: int) -> np.ndarray:
     """Turn 1-D integer class labels (B,) into a (B, num_classes) one-hot ndarray."""
     # TODO: build the one-hot matrix with NumPy (pure forward construction)
@@ -107,7 +95,7 @@ def one_hot(targets, num_classes: int) -> np.ndarray:
 
 def mse_loss(pred, target) -> "Tensor":
     """Mean squared error: scalar Tensor L = mean( (pred - target)**2 )."""
-    # TODO: coerce via _as_tensor, then implement MSE using Tensor ops and .mean()
+    # TODO: implement MSE using Tensor ops and .mean()
     raise NotImplementedError("mse_loss")
 
 
@@ -116,7 +104,7 @@ def mae_loss(pred, target) -> "Tensor":
 
     Build abs from Tensor ops (e.g. |d| = relu(d) + relu(-d)); never hand-write grads.
     """
-    # TODO: coerce via _as_tensor, then implement MAE using Tensor ops and .mean()
+    # TODO: implement MAE using Tensor ops and .mean()
     raise NotImplementedError("mae_loss")
 
 
