@@ -103,6 +103,47 @@ class Tensor(Stage8_Tensor):
 # "Tensor")`` (its construction sites just feed differently-shaped operands).
 
 
+class Dense(Stage10_Dense):
+    """stage_10 ``Dense`` re-expressed on this stage's broadcasting ``Tensor``.
+
+    stage_10 had no broadcasting backward, so it faked the bias add with the
+    matmul trick ``z += ones((B,1)) @ b.reshape(1, n_out)``.  This stage's
+    ``Tensor.__add__`` unbroadcasts, so the bias add is just ``z + b`` over a
+    ``(B, n_out) + (n_out,)`` broadcast -- the grad reduces back to ``(n_out,)``.
+
+    Params (``W``, ``b``) are rebuilt as this stage's ``Tensor`` so ``z + b``
+    routes through the broadcasting ``__add__``.  Because Python keys ``z + b``
+    on ``z``'s type and ``z = x @ W`` is built by the *inherited* stage_08
+    ``__matmul__`` (a stage_08 ``Tensor``), the add is invoked *unbound* via
+    ``Tensor.__add__(z, b)`` so the broadcasting path runs no matter z's runtime
+    class.  ``parameters``/``zero_grad``/``n_in``/``n_out`` are inherited as-is.
+    """
+
+    def __init__(
+        self,
+        n_in: int,
+        n_out: int,
+        bias: bool = True,
+        seed: Optional[int] = None,
+    ) -> None:
+        # TODO: build W (n_in, n_out) and, if bias, b (n_out,) as THIS stage's
+        #       broadcasting Tensor (stage_10 builds them as the stage_08 engine,
+        #       whose add can't broadcast the bias row).
+        raise NotImplementedError("Dense.__init__")
+
+    def __call__(self, x) -> "Tensor":
+        """Forward affine pass; ``(n_in,) -> (n_out,)`` or ``(B, n_in) -> (B, n_out)``.
+
+        Bias add is now a plain broadcast: ``(B, n_out) + (n_out,)`` for a batch,
+        ``(n_out,) + (n_out,)`` for a single input -- both handled by this stage's
+        unbroadcasting ``Tensor.__add__``."""
+        # TODO: z = x @ self.W; if bias, add it. NOTE Python keys ``z + b`` on
+        #       z's type, and ``z = x @ W`` is built by the inherited stage_08
+        #       __matmul__ (a stage_08 Tensor whose add can't broadcast), so
+        #       invoke the broadcasting add UNBOUND: ``Tensor.__add__(z, self.b)``.
+        raise NotImplementedError("Dense.__call__")
+
+
 class MLP:
     """A multilayer perceptron: ``Dense`` layers + activations. sizes
     ``[n_in, ..., n_out]`` builds len(sizes)-1 Dense layers; activation follows

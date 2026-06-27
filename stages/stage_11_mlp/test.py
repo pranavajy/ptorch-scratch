@@ -194,8 +194,13 @@ def test_hidden_nonlinearity_is_not_affine():
 @pytest.mark.parametrize("activation", ["tanh", "relu"])
 def test_gradcheck_wrt_all_params(activation):
     sizes = [3, 5, 4, 2]
-    net = build_net(sizes, activation=activation, out_activation="none", seed=7)
-    x_np = np.array([0.7, -1.3, 0.2])
+    # seed/input chosen so no pre-activation lands on the ReLU kink (z == 0).
+    # At exactly z == 0 ReLU is non-differentiable: central differences yield
+    # 0.5 while any subgradient choice (PyTorch uses 0) gives 0 or 1, so a
+    # gradcheck there is meaningless. See test_relu_subgradient_at_zero for the
+    # explicit relu'(0) == 0 contract.
+    net = build_net(sizes, activation=activation, out_activation="none", seed=0)
+    x_np = np.array([0.7, 1.3, 0.2])
 
     # Analytical gradients via one backward pass on sum(output).
     net.zero_grad()
@@ -224,6 +229,24 @@ def test_gradcheck_wrt_all_params(activation):
             f"[{activation}] dLoss/dparam[{k}] (shape {saved[k].shape}) mismatch:\n"
             f" analytic=\n{analytic[k]}\n numeric =\n{g_num}"
         )
+
+
+# --- ReLU subgradient convention at the kink (z == 0) ------------------------
+def test_relu_subgradient_at_zero():
+    """ReLU is non-differentiable at z == 0; we adopt PyTorch's convention that
+    relu'(0) == 0. This is asserted on the analytic backward directly -- NOT via
+    central differences, which give 0.5 at the kink (no subgradient matches that)
+    and so cannot be used to gradcheck exactly at zero. test_gradcheck_wrt_all_params
+    deliberately avoids landing any unit on z == 0 for that reason.
+    """
+    x = make_tensor(np.array([-2.0, 0.0, 3.0]), requires_grad=True)
+    y = x.relu()
+    loss = y.sum() if hasattr(y, "sum") else y
+    loss.backward()  # seeds ones, so x.grad == relu'(x) elementwise
+    g = as_array(x.grad)
+    assert np.allclose(g, [0.0, 0.0, 1.0]), (
+        f"relu'(0) must be 0 (PyTorch convention); got grad {g}"
+    )
 
 
 # --- Gradient check: scalar loss w.r.t. the input ----------------------------
