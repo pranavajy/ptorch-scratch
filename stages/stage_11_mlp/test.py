@@ -390,3 +390,153 @@ def test_broadcast_mul_scales_grad_by_other_operand():
     assert np.allclose(as_array(a.grad), np.broadcast_to(b_np, (2, 3)))
     assert as_array(b.grad).shape == (3,)
     assert np.allclose(as_array(b.grad), a_np.sum(axis=0))  # [5, 7, 9]
+
+
+# --- Exhaustive broadcasting gradcheck over every broadcasting binary op ------
+# The two overridden primitives are __add__ / __mul__; __sub__, __truediv__,
+# __neg__ and the reflected forms (__radd__/__rmul__/__rsub__/__rtruediv__)
+# compose out of them and so must broadcast + unbroadcast correctly too. The
+# tests below numerically gradient-check L = sum(op(a, b)) w.r.t. BOTH operands
+# across every broadcast pattern: equal shapes (no-op unbroadcast), rank
+# promotion ((n,)->(B,n)), size-1 stretch ((B,1)->(B,C)), BOTH operands
+# stretched ((R,1) & (1,C) -> (R,C)), and combined rank+size-1.
+
+# Binary ops under test. Each entry: (name, callable(a, b)). The callable uses
+# the Python operator so dispatch routes through the real dunder being tested.
+_BINARY_OPS = [
+    ("add", lambda a, b: a + b),
+    ("sub", lambda a, b: a - b),
+    ("mul", lambda a, b: a * b),
+    ("div", lambda a, b: a / b),
+]
+
+# Broadcast shape pairs (shape_a, shape_b). Both broadcast to a common shape.
+_BCAST_SHAPE_PAIRS = [
+    ((2, 3), (2, 3)),   # equal -> unbroadcast is a no-op on both
+    ((2, 3), (3,)),     # rank promotion on b: (3,) -> (2,3)
+    ((3,), (2, 3)),     # rank promotion on a (left operand smaller)
+    ((4, 3), (4, 1)),   # size-1 stretch on b's last axis (keepdims case)
+    ((4, 1), (4, 3)),   # size-1 stretch on a's last axis
+    ((2, 1), (1, 3)),   # BOTH operands stretched -> (2,3)
+    ((2, 3, 4), (4,)),  # 3-D rank promotion: (4,) -> (2,3,4)
+    ((2, 3, 4), (3, 1)),  # combined rank-promo + size-1 stretch on b
+]
+
+
+def _grad_pair(op, a_np, b_np):
+    """Analytic grads of L = sum(op(a, b)) w.r.t. a and b via Tensor.backward()."""
+    a = bcast_tensor(a_np)
+    b = bcast_tensor(b_np)
+    z = op(a, b)
+    z.backward()  # seeds ones over z's (broadcast) shape -> dL/dz = 1
+    return as_array(a.grad), as_array(b.grad), as_array(z)
+
+
+def _pos(shape, lo=1.0):
+    """Strictly-positive ramp of `shape` (so division and 1/b are well-behaved)."""
+    n = int(np.prod(shape))
+    return (np.arange(n, dtype=float) + lo).reshape(shape)
+
+
+@pytest.mark.parametrize("op_name,op", _BINARY_OPS)
+@pytest.mark.parametrize("shape_a,shape_b", _BCAST_SHAPE_PAIRS)
+def test_broadcast_binary_op_gradcheck(op_name, op, shape_a, shape_b):
+    """L = sum(op(a, b)): analytic grads match central differences, and each
+    operand's grad keeps that operand's ORIGINAL shape (unbroadcast correctness)."""
+    a_np = _pos(shape_a)
+    b_np = _pos(shape_b, lo=2.0)  # keep b away from 0 for div / b**-1
+
+    ga, gb, z = _grad_pair(op, a_np, b_np)
+
+    # Forward matches numpy's own broadcast of the same operator.
+    np_op = {"add": np.add, "sub": np.subtract, "mul": np.multiply,
+             "div": np.true_divide}[op_name]
+    assert z.shape == np.broadcast_shapes(shape_a, shape_b)
+    assert np.allclose(z, np_op(a_np, b_np))
+
+    # Each operand's grad is reduced back to its own shape.
+    assert ga.shape == shape_a, f"{op_name}: a.grad shape {ga.shape} != {shape_a}"
+    assert gb.shape == shape_b, f"{op_name}: b.grad shape {gb.shape} != {shape_b}"
+
+    # Numeric gradient of sum(op(a, b)) w.r.t. a (b fixed) and w.r.t. b (a fixed).
+    num_a = central_diff(lambda av: float(np.sum(np_op(av, b_np))), a_np.copy())
+    num_b = central_diff(lambda bv: float(np.sum(np_op(a_np, bv))), b_np.copy())
+
+    assert np.allclose(ga, num_a, atol=ATOL, rtol=RTOL), (
+        f"{op_name} dL/da [{shape_a} vs {shape_b}] mismatch:\n analytic={ga}\n numeric={num_a}"
+    )
+    assert np.allclose(gb, num_b, atol=ATOL, rtol=RTOL), (
+        f"{op_name} dL/db [{shape_a} vs {shape_b}] mismatch:\n analytic={gb}\n numeric={num_b}"
+    )
+
+
+# --- Reflected ops: `scalar OP tensor` must broadcast the python number -------
+@pytest.mark.parametrize("op_name,op", [
+    ("radd", lambda s, t: s + t),       # number.__add__ -> NotImplemented -> Tensor.__radd__
+    ("rsub", lambda s, t: s - t),       # Tensor.__rsub__: (-self) + other
+    ("rmul", lambda s, t: s * t),       # Tensor.__rmul__
+    ("rtruediv", lambda s, t: s / t),   # Tensor.__rtruediv__: (self**-1) * other
+])
+def test_broadcast_reflected_scalar_op_gradcheck(op_name, op):
+    """`scalar OP tensor` (a python number on the left) coerces+broadcasts and
+    backprops the grad to the (2,3) tensor; gradcheck against central diff."""
+    scalar = 3.0
+    t_np = _pos((2, 3), lo=2.0)  # positive -> safe for scalar / t
+    t = bcast_tensor(t_np)
+
+    z = op(scalar, t)
+    np_op = {"radd": np.add, "rsub": np.subtract,
+             "rmul": np.multiply, "rtruediv": np.true_divide}[op_name]
+    assert as_array(z).shape == (2, 3)
+    assert np.allclose(as_array(z), np_op(scalar, t_np))
+
+    z.backward()
+    g = as_array(t.grad)
+    assert g.shape == (2, 3), f"{op_name}: tensor grad must keep (2,3), got {g.shape}"
+    num = central_diff(lambda tv: float(np.sum(np_op(scalar, tv))), t_np.copy())
+    assert np.allclose(g, num, atol=ATOL, rtol=RTOL), (
+        f"{op_name} dL/dt mismatch:\n analytic={g}\n numeric={num}"
+    )
+
+
+# --- Both operands broadcast simultaneously: outer-sum forward + both grads ----
+def test_broadcast_both_operands_stretched_add():
+    """(2,1) + (1,3) -> (2,3): forward is the outer sum; backward sends the (2,1)
+    operand the row-sums (keepdims) and the (1,3) operand the column-sums."""
+    a_np = np.array([[1.0], [2.0]])        # (2, 1)
+    b_np = np.array([[10.0, 20.0, 30.0]])  # (1, 3)
+    a = bcast_tensor(a_np)
+    b = bcast_tensor(b_np)
+
+    z = a + b
+    assert as_array(z).shape == (2, 3)
+    assert np.allclose(as_array(z), a_np + b_np)
+
+    z.backward()  # seed ones (2, 3)
+    # a stretched over axis 1 -> grad sums axis 1 keepdims -> (2,1) of value 3 (C).
+    assert as_array(a.grad).shape == (2, 1)
+    assert np.allclose(as_array(a.grad), np.full((2, 1), 3.0))
+    # b stretched over axis 0 -> grad sums axis 0 keepdims -> (1,3) of value 2 (R).
+    assert as_array(b.grad).shape == (1, 3)
+    assert np.allclose(as_array(b.grad), np.full((1, 3), 2.0))
+
+
+def test_broadcast_div_keepdims_column_grad():
+    """(B,C) / (B,1): the (B,1) denominator's grad sums across C back to (B,1)
+    (the quotient-rule local factor -a/b**2, unbroadcast)."""
+    B, C = 3, 4
+    a_np = _pos((B, C))
+    b_np = _pos((B, 1), lo=2.0)
+    a = bcast_tensor(a_np)
+    b = bcast_tensor(b_np)
+
+    z = a / b
+    assert as_array(z).shape == (B, C)
+    assert np.allclose(as_array(z), a_np / b_np)
+
+    z.backward()
+    assert as_array(a.grad).shape == (B, C)
+    assert as_array(b.grad).shape == (B, 1)
+    # d/da = 1/b broadcast; d/db = sum_C(-a / b**2), keepdims.
+    assert np.allclose(as_array(a.grad), np.broadcast_to(1.0 / b_np, (B, C)))
+    assert np.allclose(as_array(b.grad), (-a_np / (b_np ** 2)).sum(axis=1, keepdims=True))
