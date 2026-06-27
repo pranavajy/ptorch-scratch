@@ -118,4 +118,6 @@ def plot_loss(history: Sequence[float], path: Optional[str] = None):
     ax.set_title("Training loss")
     if path is not None:
         fig.savefig(path)
+    else:
+        plt.show()
     return fig
