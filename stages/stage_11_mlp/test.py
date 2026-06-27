@@ -171,6 +171,40 @@ def test_call_is_forward():
     assert np.allclose(as_array(y1), as_array(y2)), "__call__ must equal forward()"
 
 
+# --- Input type guard: forward/__call__ only accept a Tensor -----------------
+@pytest.mark.parametrize(
+    "bad_x",
+    [
+        [0.3, -0.7],                       # raw python list
+        np.array([0.3, -0.7]),            # bare numpy array (not a Tensor)
+        0.5,                               # scalar
+    ],
+)
+def test_forward_and_call_reject_non_tensor(bad_x):
+    """``MLP.forward`` and ``MLP.__call__`` must reject any ``x`` that is not a
+    ``Tensor`` (raise ``TypeError``).
+
+    The net runs the autodiff graph through ``x``; a raw list/array/scalar has no
+    ``.data``/``.backward`` and would either crash deep inside a layer or silently
+    skip gradient tracking. Guard at the boundary instead, raising ``TypeError``.
+    A real ``Tensor`` (this stage's broadcasting subclass) must still pass.
+    """
+    net = build_net([2, 4, 3], seed=5)
+    with pytest.raises(TypeError):
+        net.forward(bad_x)
+    with pytest.raises(TypeError):
+        net(bad_x)
+
+
+def test_forward_and_call_accept_tensor():
+    """The type guard must NOT reject a genuine ``Tensor`` (the happy path)."""
+    net = build_net([2, 4, 3], seed=5)
+    x = make_tensor([0.3, -0.7], requires_grad=False)
+    # Neither call raises; both produce the (n_out,) output.
+    assert as_array(net.forward(x)).shape == (3,)
+    assert as_array(net(make_tensor([0.3, -0.7], requires_grad=False))).shape == (3,)
+
+
 # --- Depth + nonlinearity actually matters -----------------------------------
 def test_hidden_nonlinearity_is_not_affine():
     """A 1->H->1 MLP with a tanh hidden layer must NOT be an affine function of x.

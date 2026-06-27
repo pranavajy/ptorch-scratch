@@ -182,13 +182,13 @@ class MLP:
         # TODO: dispatch "none"/"tanh"/"relu" to z / z.tanh() / z.relu().
         raise NotImplementedError("MLP._apply_activation")
 
-    def forward(self, x) -> "Stage8_Tensor":
+    def forward(self, x: "Stage8_Tensor") -> "Stage8_Tensor":
         """Chain layers, applying activation after each (out_activation after the
         last). x ``(n_in,)`` or ``(batch, n_in)`` -> ``(n_out,)`` / ``(batch, n_out)``."""
         # TODO: chain layers with the right activation per layer.
         raise NotImplementedError("MLP.forward")
 
-    def __call__(self, x) -> "Stage8_Tensor":
+    def __call__(self, x: "Stage8_Tensor") -> "Stage8_Tensor":
         """Alias for :meth:`forward`."""
         # TODO: delegate to forward.
         raise NotImplementedError("MLP.__call__")
