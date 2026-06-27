@@ -51,27 +51,18 @@ class Tensor(Stage8_Tensor):
 
     @staticmethod
     def _unbroadcast(grad: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
-        """Reduce a broadcasted gradient back to an operand's original ``shape``.
+        """Sum a broadcasted ``grad`` back to an operand's original ``shape``.
 
-        When ``z = f(x, y)`` forwards through NumPy broadcasting, the upstream
-        gradient ``grad`` has the *broadcast* shape, not ``x.shape``.  The chain
-        rule says a value that was copied across a broadcast axis receives the
-        SUM of the gradient over the copies.  So to send ``grad`` back to a
-        parent whose original shape is ``shape`` we must:
-
-          1. Sum away any EXTRA LEADING axes ``grad`` has beyond ``len(shape)``
-             (these came from rank promotion, e.g. ``(3,)`` -> ``(2,3)``), then
-          2. For every axis where the operand had size 1 but the broadcast shape
-             had size > 1, sum ``grad`` over that axis with ``keepdims=True``
-             (the size-1 axis was stretched), and finally
-          3. ``reshape`` to exactly ``shape`` (a no-op once 1 & 2 are done).
-
-        The result is ``np.ndarray`` of shape ``shape``, ready to ``+=`` into
-        that parent's ``.grad``.
-
-        Example: ``z = a + b`` with ``a.shape == (2, 3)``, ``b.shape == (3,)``
-        and upstream ``grad`` of shape ``(2, 3)``.  ``a`` gets ``grad`` as-is;
-        ``b`` gets ``grad.sum(axis=0)`` -> shape ``(3,)`` (the column sums).
+        Forward broadcast *copies* an operand to fill the output; chain rule says
+        a copied value's grad is the SUM over its copies. So undo a broadcast by
+        summing the copied axes away (stage_08's ``+=`` would shape-mismatch /
+        be wrong without this). Two cases compose:
+          1. RANK PROMOTION (e.g. bias ``(N,)`` -> ``(B,N)``): sum extra leading
+             axes -- ``while grad.ndim > len(shape): grad = grad.sum(axis=0)``.
+          2. SIZE-1 STRETCH (e.g. softmax ``(B,1)`` -> ``(B,C)``): sum each
+             stretched size-1 axis with ``keepdims=True``.
+        Then ``reshape(shape)`` (no-op after 1&2). Equal shapes pass through.
+        E.g. ``(2,3)+(3,)``: ``a`` gets ``grad`` as-is, ``b`` gets ``grad.sum(axis=0)``.
         """
         # TODO: implement the unbroadcast reduction described above:
         #   - while grad.ndim > len(shape): grad = grad.sum(axis=0)
