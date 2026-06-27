@@ -15,7 +15,7 @@ from dlfs import stage_import
 
 # Tensor (11); Dense (11); Conv2D/MaxPool2D/Flatten (25); cross_entropy_loss (13, batched); Adam (18).
 # NOTE Conv2D signature is Conv2D(out_channels, in_channels, kernel_size, ...).
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage11_Dense = stage_import("stage_11", "Dense")
 Stage25_Conv2D, Stage25_MaxPool2D, Stage25_Flatten = stage_import(
     "stage_25", "Conv2D", "MaxPool2D", "Flatten"
@@ -24,7 +24,7 @@ Stage13_cross_entropy_loss = stage_import("stage_13", "cross_entropy_loss")
 Stage18_Adam = stage_import("stage_18", "Adam")
 
 # Re-export under canonical public names (Conv2d/MaxPool2d are lowercase aliases).
-Tensor = Stage11_Tensor
+Tensor = Stage12_Tensor
 Dense = Stage11_Dense
 Conv2D = Stage25_Conv2D
 MaxPool2D = Stage25_MaxPool2D
@@ -68,17 +68,17 @@ class CNN:
         # TODO: build the conv tower + dense head; derive flat_dim from spatial arithmetic
         raise NotImplementedError("CNN.__init__")
 
-    def forward(self, x) -> "Stage11_Tensor":
+    def forward(self, x) -> "Stage12_Tensor":
         """Run a (B, C, H, W) batch -> (B, n_classes) logits (no softmax)."""
         # TODO: implement the forward pass (relu via Tensor.relu, no head activation).
         raise NotImplementedError("CNN.forward")
 
-    def __call__(self, x) -> "Stage11_Tensor":
+    def __call__(self, x) -> "Stage12_Tensor":
         """Alias for :meth:`forward`."""
         # TODO: delegate to self.forward.
         raise NotImplementedError("CNN.__call__")
 
-    def parameters(self) -> List["Stage11_Tensor"]:
+    def parameters(self) -> List["Stage12_Tensor"]:
         """Every learnable parameter from every sub-layer, in forward order."""
         # TODO: collect params from sub-layers that expose parameters()
         raise NotImplementedError("CNN.parameters")

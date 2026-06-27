@@ -15,7 +15,7 @@ import numpy as np
 from dlfs import stage_import
 
 # Tensor (09); mytorch Module/Parameter/Linear/Adam (33); TransformerBlock/LayerNorm (31).
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage32_Module, Stage32_Parameter, Stage32_Linear, Stage32_Adam = stage_import(
     "stage_32", "Module", "Parameter", "Linear", "Adam"
 )
@@ -74,7 +74,7 @@ class TokenEmbedding(Stage32_Module):
         # TODO: init Parameter ``E`` (V, D) with small normal; store config.
         raise NotImplementedError("TokenEmbedding.__init__")
 
-    def forward(self, ids: np.ndarray) -> "Stage11_Tensor":
+    def forward(self, ids: np.ndarray) -> "Stage12_Tensor":
         """Gather ``E[ids]`` -> Tensor (B, L, D) as an autodiff node; backward
         scatter-adds into E.grad."""
         # TODO: build/return the gather Tensor with scatter-add backward.
@@ -107,23 +107,23 @@ class TransformerLM(Stage32_Module):
         # TODO: build tok_emb, pos_emb, n_layers blocks, final_ln, head (per-submodule seeds)
         raise NotImplementedError("TransformerLM.__init__")
 
-    def forward(self, ids: np.ndarray) -> "Stage11_Tensor":
+    def forward(self, ids: np.ndarray) -> "Stage12_Tensor":
         """Compute next-token logits (B, L, V) from ids (B, L), L <= block_size."""
         # TODO: implement the pre-norm wiring; return (B, L, V) logits.
         raise NotImplementedError("TransformerLM.forward")
 
-    def __call__(self, ids: np.ndarray) -> "Stage11_Tensor":
+    def __call__(self, ids: np.ndarray) -> "Stage12_Tensor":
         """Alias for :meth:`forward`."""
         # TODO: delegate to forward.
         raise NotImplementedError("TransformerLM.__call__")
 
-    def parameters(self) -> List["Stage11_Tensor"]:
+    def parameters(self) -> List["Stage12_Tensor"]:
         """Every learnable Parameter, once, in stable order (tok_emb, pos_emb, blocks, final_ln, head)."""
         # TODO: gather params from all submodules + pos_emb.
         raise NotImplementedError("TransformerLM.parameters")
 
 
-def lm_loss(logits: "Stage11_Tensor", targets: np.ndarray) -> "Stage11_Tensor":
+def lm_loss(logits: "Stage12_Tensor", targets: np.ndarray) -> "Stage12_Tensor":
     """Mean next-token cross-entropy over all B*L positions; returns a scalar Tensor.
     A fresh model returns ~ ``ln(V)``."""
     # TODO: flatten positions into the batch axis and call cross_entropy_loss.

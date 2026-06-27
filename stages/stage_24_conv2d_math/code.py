@@ -11,11 +11,11 @@ from typing import Tuple
 
 import numpy as np
 
-# Stage_08 Mat / stage_11 Tensor used here only as shape oracles.
+# Stage_08 Mat / stage_12 Tensor used here only as shape oracles.
 from dlfs import stage_import
 
 Stage7_Mat = stage_import("stage_07", "Mat")
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 
 
 # Output-size formulas

@@ -13,7 +13,7 @@ import numpy as np
 # Tensor (09); Dense (11); losses (14); SGD (15); Adam (19); DataLoader/Dataset (21).
 from dlfs import stage_import
 
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage11_Dense = stage_import("stage_11", "Dense")
 Stage13_cross_entropy_loss = stage_import("stage_13", "cross_entropy_loss")
 Stage12_mse_loss = stage_import("stage_12", "mse_loss")
@@ -22,7 +22,7 @@ Stage18_Adam = stage_import("stage_18", "Adam")
 Stage20_DataLoader, Stage20_Dataset = stage_import("stage_20", "DataLoader", "Dataset")
 
 # Canonical public names re-exported unchanged.
-Tensor = Stage11_Tensor
+Tensor = Stage12_Tensor
 SGD = Stage14_SGD
 Adam = Stage18_Adam
 DataLoader = Stage20_DataLoader

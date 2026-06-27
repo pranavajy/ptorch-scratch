@@ -14,7 +14,7 @@ import numpy as np
 from dlfs import stage_import
 
 # Tensor (11) + mytorch optim/data (32) + cross-entropy (13, batched) + Dense (11) + conv tower (25).
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage32_Adam, Stage32_DataLoader, Stage32_Dataset = stage_import(
     "stage_32", "Adam", "DataLoader", "Dataset"
 )
@@ -25,7 +25,7 @@ Stage25_Conv2D, Stage25_MaxPool2D, Stage25_Flatten = stage_import(
 )
 
 # Canonical aliases so downstream code and tests can import the plain names.
-Tensor = Stage11_Tensor
+Tensor = Stage12_Tensor
 cross_entropy_loss = Stage13_cross_entropy_loss
 Adam = Stage32_Adam
 DataLoader = Stage32_DataLoader
@@ -60,18 +60,18 @@ class BatchNorm2d:
         # TODO: implement eval-mode toggle
         raise NotImplementedError("BatchNorm2d.eval")
 
-    def __call__(self, x: Union["Stage11_Tensor", np.ndarray]) -> "Stage11_Tensor":
+    def __call__(self, x: Union["Stage12_Tensor", np.ndarray]) -> "Stage12_Tensor":
         """Forward on ``(N, C, H, W)`` -> ``(N, C, H, W)``; train uses batch stats
         (reduce over axes (0,2,3)) + updates buffers, eval uses running buffers."""
         # TODO: implement the BatchNorm2d forward + backward closure
         raise NotImplementedError("BatchNorm2d.__call__")
 
-    def forward(self, x) -> "Stage11_Tensor":
+    def forward(self, x) -> "Stage12_Tensor":
         """Alias for :meth:`__call__`."""
         # TODO: delegate to __call__
         raise NotImplementedError("BatchNorm2d.forward")
 
-    def parameters(self) -> List["Stage11_Tensor"]:
+    def parameters(self) -> List["Stage12_Tensor"]:
         """Learnable parameters ``[gamma, beta]`` (buffers excluded)."""
         # TODO: return the learnable parameters
         raise NotImplementedError("BatchNorm2d.parameters")
@@ -175,17 +175,17 @@ class ConvNet:
         # TODO: build the conv stages + dense head; derive flat_dim from spatial size
         raise NotImplementedError("ConvNet.__init__")
 
-    def forward(self, x: Union["Stage11_Tensor", np.ndarray]) -> "Stage11_Tensor":
+    def forward(self, x: Union["Stage12_Tensor", np.ndarray]) -> "Stage12_Tensor":
         """Run a (B,C,H,W) batch -> (B, n_classes) logits (no softmax)."""
         # TODO: implement the forward pass over self.layers
         raise NotImplementedError("ConvNet.forward")
 
-    def __call__(self, x) -> "Stage11_Tensor":
+    def __call__(self, x) -> "Stage12_Tensor":
         """Alias for :meth:`forward`."""
         # TODO: delegate to forward
         raise NotImplementedError("ConvNet.__call__")
 
-    def parameters(self) -> List["Stage11_Tensor"]:
+    def parameters(self) -> List["Stage12_Tensor"]:
         """Every learnable parameter from every sub-layer, in forward order."""
         # TODO: gather parameters from all sub-layers
         raise NotImplementedError("ConvNet.parameters")

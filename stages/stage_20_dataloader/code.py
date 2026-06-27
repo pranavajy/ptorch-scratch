@@ -14,13 +14,13 @@ import numpy as np
 from dlfs import stage_import
 
 # Tensor (09); MLP/mse_loss/SGD/train_minibatch (19).
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage19_MLP, Stage19_mse_loss, Stage19_SGD, Stage19_train_minibatch = stage_import(
     "stage_19", "MLP", "mse_loss", "SGD", "train_minibatch"
 )
 
 # Re-export imported pieces under canonical public names.
-Tensor = Stage11_Tensor
+Tensor = Stage12_Tensor
 MLP = Stage19_MLP
 mse_loss = Stage19_mse_loss
 SGD = Stage19_SGD
@@ -67,7 +67,7 @@ class DataLoader:
         # TODO: implement
         raise NotImplementedError("DataLoader.__len__")
 
-    def __iter__(self) -> Iterator[Tuple["Stage11_Tensor", "Stage11_Tensor"]]:
+    def __iter__(self) -> Iterator[Tuple["Stage12_Tensor", "Stage12_Tensor"]]:
         """Yield ``(X_b, y_b)`` Tensor batches for one epoch (fresh order, optional
         drop_last). X_b: (b, n_in), y_b: (b,) or (b, 1)."""
         # TODO: implement the per-epoch generator.

@@ -14,13 +14,13 @@ import numpy as np
 from dlfs import stage_import
 
 # Tensor (09); SelfAttention/causal_mask (29) -- the head composed h times.
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage28_SelfAttention, Stage28_causal_mask = stage_import(
     "stage_28", "SelfAttention", "causal_mask"
 )
 
 # Re-export under canonical public names.
-Tensor = Stage11_Tensor
+Tensor = Stage12_Tensor
 SelfAttention = Stage28_SelfAttention
 causal_mask = Stage28_causal_mask
 
@@ -46,18 +46,18 @@ class MultiHeadAttention:
         self.d_k: int
         self.causal: bool = causal
         self.heads: List["Stage28_SelfAttention"]
-        self.W_o: "Stage11_Tensor"
-        self.last_attn: Optional[List["Stage11_Tensor"]] = None
+        self.W_o: "Stage12_Tensor"
+        self.last_attn: Optional[List["Stage12_Tensor"]] = None
         # TODO: validate divisibility; build h heads + W_o (init 1/sqrt(d_model)); last_attn=None.
         raise NotImplementedError("MultiHeadAttention.__init__")
 
-    def forward(self, x) -> "Stage11_Tensor":
+    def forward(self, x) -> "Stage12_Tensor":
         """Run all heads on ``x``, concatenate (Tensor ops, no detach), apply ``W_o``;
         (T, d_model) -> (T, d_model). Records self.last_attn per head."""
         # TODO: run heads, concat to (T, d_model), record last_attn, return concat @ W_o.
         raise NotImplementedError("MultiHeadAttention.forward")
 
-    def __call__(self, x) -> "Stage11_Tensor":
+    def __call__(self, x) -> "Stage12_Tensor":
         """Alias for :meth:`forward`."""
         # TODO: delegate to forward
         raise NotImplementedError("MultiHeadAttention.__call__")
@@ -67,7 +67,7 @@ class MultiHeadAttention:
         # TODO: run forward, return per-head last_attn.data
         raise NotImplementedError("MultiHeadAttention.attention_weights")
 
-    def parameters(self) -> List["Stage11_Tensor"]:
+    def parameters(self) -> List["Stage12_Tensor"]:
         """Return all learnable params: every head's, then ``W_o`` (stable order)."""
         # TODO: gather each head's parameters, then append W_o
         raise NotImplementedError("MultiHeadAttention.parameters")

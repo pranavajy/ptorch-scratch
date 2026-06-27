@@ -14,7 +14,7 @@ import numpy as np
 # Reused framework: autodiff, model, loss, optimizers, datasets + full-batch driver.
 from dlfs import stage_import
 
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage11_MLP = stage_import("stage_11", "MLP")
 Stage12_mse_loss = stage_import("stage_12", "mse_loss")
 Stage14_Optimizer, Stage14_SGD = stage_import("stage_14", "Optimizer", "SGD")
@@ -24,7 +24,7 @@ Stage15_make_moons, Stage15_make_spiral, Stage15_accuracy, Stage15_train = stage
 )
 
 # Re-export under canonical names for this stage's callers and later stages.
-Tensor = Stage11_Tensor
+Tensor = Stage12_Tensor
 MLP = Stage11_MLP
 mse_loss = Stage12_mse_loss
 Optimizer = Stage14_Optimizer

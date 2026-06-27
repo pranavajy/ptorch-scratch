@@ -3,7 +3,7 @@
 Turns the variance-propagation rule Var(z) = n_in * Var(W) * Var(x) into the
 Xavier/Glorot (tanh/linear) and He/Kaiming (relu) schemes plus a harness that
 measures activation statistics across depth. Imports Dense (stage_11) and Tensor
-(stage_11) as-is; builds samplers and a measurement harness on top.
+(stage_12) as-is; builds samplers and a measurement harness on top.
 """
 
 from __future__ import annotations
@@ -12,14 +12,14 @@ from typing import List, Optional
 
 import numpy as np
 
-# Dense (stage_11) and Tensor (stage_11) via the shared dlfs shim, used as-is.
+# Dense (stage_11) and Tensor (stage_12) via the shared dlfs shim, used as-is.
 from dlfs import stage_import
 
 Stage11_Dense = stage_import("stage_11", "Dense")
-Stage11_Tensor = stage_import("stage_11", "Tensor")
+Stage12_Tensor = stage_import("stage_12", "Tensor")
 
 Dense = Stage11_Dense
-Tensor = Stage11_Tensor
+Tensor = Stage12_Tensor
 
 
 def xavier_uniform(
@@ -57,7 +57,7 @@ def init_dense(layer: "Stage11_Dense", W: np.ndarray, b: Optional[np.ndarray] = 
     raise NotImplementedError("init_dense")
 
 
-def _apply_activation(t: "Stage11_Tensor", activation: str) -> "Stage11_Tensor":
+def _apply_activation(t: "Stage12_Tensor", activation: str) -> "Stage12_Tensor":
     """Apply an elementwise activation Tensor-op by name: {"tanh", "relu", "none"}."""
     # TODO: dispatch to the matching Tensor op; raise ValueError on unknown name.
     raise NotImplementedError("_apply_activation")
