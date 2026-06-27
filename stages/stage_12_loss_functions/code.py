@@ -39,34 +39,41 @@ class Tensor(Stage11_Tensor):
 
     def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None,
             keepdims: bool = False) -> "Tensor":
-        """Sum over ``axis`` (all elements if ``axis is None``). z = self.sum(...).
+        """Sum along ``axis`` (whole array when ``axis is None``). Returns a graph
+        ``Tensor`` node (not a raw number) so ``backward()`` keeps flowing.
 
-        TODO (forward): z.data = np.sum(self.data, axis=axis, keepdims=keepdims),
-            returning a child Tensor with _prev=(self,), _op="sum".
-        TODO (backward): each input element contributed exactly once to its output
-            cell, so its local grad is 1.  dL/d(self) = the upstream grad
-            *expanded* (broadcast) back to ``self.shape`` over the reduced axes.
-            With keepdims=False you must first restore the reduced axes as size-1
-            (e.g. np.expand_dims over the summed axes, or reshape) before
-            broadcasting to self.shape; with keepdims=True it already broadcasts.
-            Accumulate via the engine's grad-accumulation path (the same one
-            __add__/__mul__ use) so it matches self.shape.
+        Forward: ``z.data = np.sum(...)``; child with ``_prev=(self,)``, ``_op="sum"``.
+        Backward: ``sum`` is many-to-one with coefficient 1, so each input's grad is
+        just the upstream grad of the output cell it fed -- i.e. broadcast ``z.grad``
+        back to ``self.shape``: ``self.grad += broadcast(z.grad -> self.shape)``.
+        When ``keepdims=False`` the reduced axes were dropped from ``z.grad``;
+        restore them as size-1 (``np.expand_dims`` / ``reshape``) before broadcasting.
+        Accumulate with ``+=`` (same grad path as ``__add__``/``__mul__``).
+
+        Example: ``x = Tensor([[1, 2], [3, 4]])``
+            ``x.sum()`` -> ``10`` (scalar);  ``x.sum(axis=0)`` -> ``[4, 6]``.
+            After ``x.sum().backward()``, ``x.grad`` is all-ones ``[[1, 1], [1, 1]]``.
         """
         raise NotImplementedError("Tensor.sum")
 
     def mean(self, axis: Optional[Union[int, Tuple[int, ...]]] = None,
              keepdims: bool = False) -> "Tensor":
-        """Mean over ``axis`` (all elements if ``axis is None``). z = self.mean(...).
+        """Average along ``axis`` (whole array when ``axis is None``). Returns a graph
+        ``Tensor`` node, like ``sum``. This is the reduction the losses call
+        (``mse_loss`` is ``((pred - target) ** 2).mean()``): a loss must be a
+        per-batch average so its scale doesn't grow with batch size.
 
-        TODO (forward): z.data = np.mean(self.data, axis=axis, keepdims=keepdims),
-            returning a child Tensor with _prev=(self,), _op="mean".
-        TODO (backward): mean = sum / N where N is the number of reduced elements
-            (the product of the reduced-axis sizes; self.data.size when axis is
-            None).  So this is exactly the ``sum`` backward but each expanded grad
-            is additionally divided by N: dL/d(self) = (upstream grad expanded to
-            self.shape over the reduced axes) / N.  Expand the same way as sum
-            (restore reduced axes to size-1 first when keepdims=False), then
-            broadcast to self.shape and accumulate.
+        Forward: ``z.data = np.mean(...)``; child ``_prev=(self,)``, ``_op="mean"``.
+        Backward: ``mean = sum / N`` with N = count of reduced elements (product of
+        reduced-axis sizes, or ``self.data.size`` when ``axis is None``). Dividing the
+        forward by N divides the backward by N, so it's the ``sum`` backward scaled:
+        ``self.grad += broadcast(z.grad -> self.shape) / N`` (restore size-1 axes
+        first when ``keepdims=False``). Sanity check: ``x.mean()`` gives every input
+        grad ``1/N``.
+
+        Example: ``x = Tensor([[1, 2], [3, 4]])``
+            ``x.mean()`` -> ``2.5`` (scalar);  ``x.mean(axis=0)`` -> ``[2, 3]``.
+            After ``x.mean().backward()``, ``x.grad`` is all ``1/4`` (N=4).
         """
         raise NotImplementedError("Tensor.mean")
 
