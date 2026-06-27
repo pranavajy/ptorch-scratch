@@ -109,5 +109,13 @@ def train(
 
 def plot_loss(history: Sequence[float], path: Optional[str] = None):
     """Plot training loss vs epoch; save to path if given. Returns the Figure."""
-    # TODO: plot the loss history with matplotlib
-    raise NotImplementedError("plot_loss")
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    ax.plot(range(1, len(history) + 1), history)
+    ax.set_xlabel("epoch")
+    ax.set_ylabel("loss")
+    ax.set_title("Training loss")
+    if path is not None:
+        fig.savefig(path)
+    return fig
