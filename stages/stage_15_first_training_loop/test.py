@@ -297,7 +297,9 @@ def test_accuracy_perfect_and_half():
 def test_train_returns_history_and_decreases_loss():
     X, y = _requires(make_moons, n=160, noise=0.1, seed=0)
     model = _requires(MLP, [2, 16, 1], activation="tanh", seed=0)
-    history = _requires(train, model, X, y, lr=0.1, epochs=50)
+    history = _requires(
+        train, model, Tensor(X), Tensor(y.reshape(-1, 1)), lr=0.1, epochs=50
+    )
     assert isinstance(history, list)
     assert len(history) == 50
     assert all(np.isfinite(history))
@@ -309,7 +311,7 @@ def test_train_returns_history_and_decreases_loss():
 def test_train_fits_noiseless_moons():
     X, y = _requires(make_moons, n=200, noise=0.0, seed=0)
     model = _requires(MLP, [2, 16, 1], activation="tanh", seed=0)
-    _requires(train, model, X, y, lr=0.2, epochs=400)
+    _requires(train, model, Tensor(X), Tensor(y.reshape(-1, 1)), lr=0.2, epochs=400)
     pred = model(X)
     acc = accuracy(pred, y)
     assert acc >= 0.90, f"expected >= 90% train accuracy on clean moons, got {acc:.3f}"
@@ -319,6 +321,18 @@ def test_train_uses_provided_optimizer():
     X, y = _requires(make_moons, n=120, noise=0.1, seed=0)
     model = _requires(MLP, [2, 8, 1], activation="tanh", seed=0)
     opt = _requires(SGD, model.parameters(), lr=0.1)
-    history = _requires(train, model, X, y, epochs=20, optimizer=opt)
+    history = _requires(
+        train, model, Tensor(X), Tensor(y.reshape(-1, 1)), epochs=20, optimizer=opt
+    )
     assert len(history) == 20
     assert history[-1] <= history[0]
+
+
+def test_train_rejects_non_tensor_inputs():
+    """train must accept ONLY Tensor for X and y; raw ndarrays raise TypeError."""
+    X, y = _requires(make_moons, n=40, noise=0.1, seed=0)
+    model = _requires(MLP, [2, 8, 1], activation="tanh", seed=0)
+    with pytest.raises(AssertionError):
+        train(model, X, y, epochs=1)                       # X, y both ndarray
+    with pytest.raises(AssertionError):
+        train(model, Tensor(X), y.reshape(-1, 1), epochs=1)  # y ndarray

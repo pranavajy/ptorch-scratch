@@ -94,15 +94,19 @@ def accuracy(pred: "Stage12_Tensor", y) -> float:
 
 def train(
     model: "Stage11_MLP",
-    X,
-    y,
+    X: "Stage12_Tensor",
+    y: "Stage12_Tensor",
     *,
     lr: float = 0.1,
     epochs: int = 200,
     optimizer: Optional["Stage14_SGD"] = None,
 ) -> List[float]:
     """Run the training loop (forward -> mse_loss -> backward -> step -> zero_grad);
-    return per-epoch loss history. Defaults to SGD(model.parameters(), lr) if None."""
+    return per-epoch loss history. Defaults to SGD(model.parameters(), lr) if None.
+
+    ``X`` and ``y`` must be ``Tensor`` instances (X: (N, n_in), y: (N,) or (N, 1));
+    raise TypeError otherwise. Wrap the NumPy arrays from make_moons/make_spiral
+    with ``Tensor(...)`` before calling."""
     # TODO: implement the training loop
     raise NotImplementedError("train")
 
