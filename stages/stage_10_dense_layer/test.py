@@ -266,6 +266,34 @@ def test_zero_grad():
     assert np.allclose(as_array(layer.b.grad), 0.0), "zero_grad must clear b.grad"
 
 
+# --- Raw (non-Tensor) inputs are coerced before the matmul ------------------
+@pytest.mark.parametrize(
+    "raw_x",
+    [
+        [0.5, -1.0, 2.0],                       # python list, single (n_in,)
+        np.array([0.5, -1.0, 2.0]),             # ndarray, single (n_in,)
+        [[0.5, -1.0, 2.0], [1.0, 0.0, -0.5]],   # nested list, batched (B, n_in)
+        np.array([[0.5, -1.0, 2.0], [1.0, 0.0, -0.5]]),  # ndarray, batched
+    ],
+)
+def test_accepts_raw_non_tensor_input(raw_x):
+    """``Dense.__call__`` must coerce a raw list/ndarray into a Tensor before
+    ``x @ self.W``. Without that coercion the matmul gets a bare list/ndarray
+    (no autodiff ``@`` against a Tensor) and raises instead of returning a
+    Tensor whose forward equals the plain numpy affine map."""
+    layer = Dense(3, 4, bias=True, seed=2)
+    X = np.asarray(raw_x, dtype=float)
+    expected = X @ as_array(layer.W) + as_array(layer.b)
+
+    y = layer(raw_x)  # raw input, NOT wrapped in a Tensor
+
+    assert hasattr(y, "data"), "Dense must return a Tensor for raw input"
+    assert as_array(y).shape == expected.shape, "raw-input output shape mismatch"
+    assert np.allclose(as_array(y), expected, atol=ATOL), (
+        f"raw-input forward mismatch:\n got     ={as_array(y)}\n expected={expected}"
+    )
+
+
 # --- Layer equals a stack of independent neurons (column-wise) --------------
 def test_columns_are_independent():
     """Output column j depends only on W[:, j] (and b[j]); a sanity check that
