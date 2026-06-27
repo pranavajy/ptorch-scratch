@@ -353,6 +353,57 @@ def test_matmul_vector_dot_produces_scalar_backward():
 
 
 # --------------------------------------------------------------------------- #
+# reshape: pure rearrangement, grad flows back under the inverse reshape
+# --------------------------------------------------------------------------- #
+def test_reshape_forward_varargs():
+    x = Tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    z = x.reshape(2, 3)
+    assert z.shape == (2, 3)
+    assert np.allclose(z.data, np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]))
+
+
+def test_reshape_forward_tuple():
+    # must accept a single tuple arg too: t.reshape((2, 3))
+    x = Tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    z = x.reshape((3, 2))
+    assert z.shape == (3, 2)
+    assert np.allclose(z.data, x.data.reshape(3, 2))
+
+
+def test_reshape_minus_one_flattens():
+    x = Tensor([[1.0, 2.0], [3.0, 4.0]])
+    z = x.reshape(-1)                       # NumPy infers the (4,) shape
+    assert z.shape == (4,)
+    assert np.allclose(z.data, [1.0, 2.0, 3.0, 4.0])
+
+
+def test_reshape_backward_routes_grad_to_original_shape():
+    x = Tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])  # (2,3)
+    z = x.reshape(6)                                  # (6,)
+    z.backward()                                      # seeds ones((6,))
+    # pure rearrangement: every grad entry is 1, reshaped back to x's shape
+    assert x.grad.shape == x.data.shape
+    assert np.allclose(x.grad, np.ones((2, 3)))
+
+
+def test_reshape_backward_through_op_preserves_values():
+    # grad must travel the inverse reshape with the RIGHT per-entry values,
+    # not just the right shape. Square after reshape so dz/dx = 2x, then
+    # confirm each entry lands back in its original (2,2) slot.
+    x = Tensor([[1.0, 2.0], [3.0, 4.0]])
+    z = (x.reshape(4) ** 2)                 # (4,), entrywise x**2
+    z.backward()
+    assert np.allclose(x.grad, 2.0 * x.data)
+    assert x.grad.shape == x.data.shape
+
+
+def test_reshape_records_graph():
+    x = Tensor([1.0, 2.0, 3.0, 4.0])
+    z = x.reshape(2, 2)
+    assert z._prev == (x,)
+
+
+# --------------------------------------------------------------------------- #
 # gradient accumulation on reused nodes
 # --------------------------------------------------------------------------- #
 def test_reuse_accumulates_array():

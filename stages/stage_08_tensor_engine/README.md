@@ -159,6 +159,10 @@ sums-to-scalar when the operand is a 0-d constant.
   A `_coerce` helper wraps raw operands so `t + 2.0` and `2.0 * t` work.
 - **Elementwise methods**: `relu`, `tanh`, `exp`, `log` — each its own `_backward` using the rules in §2
   ($g\odot\mathbf 1[x>0]$, $g\odot(1-z^2)$, $g\odot z$, $g\oslash x$).
+- **Reshape**: `reshape(*shape)` — pure rearrangement, no entry created/combined, so its `_backward` is
+  just the **inverse reshape**: forward `self.data.reshape(shape)`; backward `self.grad += out.grad.reshape(self.data.shape)`.
+  Accept varargs (`t.reshape(2, 3)`) or a single tuple (`t.reshape((2, 3))`), and a `-1` placeholder
+  NumPy infers (`t.reshape(-1)` flattens). Later stages reshape between conv feature maps and dense layers.
 - **Matmul**: `__matmul__` (the `@` operator) pushing `G @ B.T` to the left operand and `A.T @ G` to the
   right — the rule you derived in §2. That rule is exact for 2-D operands; also handle the 1-D forms the
   neuron / dense layer use (`(n,)@(n,)`→scalar, `(n,)@(n,m)`→`(m,)`, batched `(b,n)@(n,)`→`(b,)`). For a
