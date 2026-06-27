@@ -30,9 +30,29 @@ Dense = Stage11_Dense
 def make_moons(
     n: int = 200, noise: float = 0.1, seed: Optional[int] = None
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Two interleaving half-moons. Returns X (n, 2) and y in {-1, +1} (n,)."""
-    # TODO: generate the half-moons dataset
-    raise NotImplementedError("make_moons")
+    """Two interleaving half-moons. Returns X (n, 2) and y in {-1, +1} (n,).
+
+    Generates a random toy dataset used to train and test the training loop:
+    a non-linearly-separable 2-class problem the MLP must learn to split.
+    `seed` makes the draw reproducible; `noise` is the per-point Gaussian jitter.
+    """
+    rng = np.random.default_rng(seed)
+    n_out = n // 2          # outer (upper) moon, label +1
+    n_in = n - n_out        # inner (lower) moon, label -1
+
+    # Outer moon: upper half-circle centered at origin.
+    t_out = np.linspace(0.0, np.pi, n_out)
+    x_out = np.stack([np.cos(t_out), np.sin(t_out)], axis=1)
+
+    # Inner moon: lower half-circle, shifted right and down so the two interlock.
+    t_in = np.linspace(0.0, np.pi, n_in)
+    x_in = np.stack([1.0 - np.cos(t_in), 0.5 - np.sin(t_in)], axis=1)
+
+    X = np.concatenate([x_out, x_in], axis=0).astype(np.float64)
+    y = np.concatenate([np.ones(n_out), -np.ones(n_in)]).astype(np.float64)
+
+    X += rng.normal(0.0, noise, size=X.shape)
+    return X, y
 
 
 def make_spiral(
@@ -41,9 +61,29 @@ def make_spiral(
     noise: float = 0.2,
     seed: Optional[int] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """n_classes-arm spiral. Returns X (n_per_class*n_classes, 2) and y in {-1, +1}."""
-    # TODO: generate the spiral dataset (only binary needed here)
-    raise NotImplementedError("make_spiral")
+    """n_classes-arm spiral. Returns X (n_per_class*n_classes, 2) and y in {-1, +1}.
+
+    Generates a random toy dataset used to train and test the training loop:
+    interleaved spiral arms, a harder non-linearly-separable 2-class problem.
+    `seed` makes the draw reproducible; `noise` is the per-point angular jitter.
+    """
+    rng = np.random.default_rng(seed)
+    X = np.zeros((n_per_class * n_classes, 2), dtype=np.float64)
+    y = np.zeros(n_per_class * n_classes, dtype=np.float64)
+
+    for c in range(n_classes):
+        idx = slice(c * n_per_class, (c + 1) * n_per_class)
+        r = np.linspace(0.0, 1.0, n_per_class)                       # radius 0 -> 1
+        # Each arm starts a full turn offset from the last; noise jitters the angle.
+        theta = (
+            np.linspace(c * 4.0, (c + 1) * 4.0, n_per_class)
+            + rng.normal(0.0, noise, size=n_per_class)
+        )
+        X[idx] = np.stack([r * np.sin(theta), r * np.cos(theta)], axis=1)
+        # Binary labels in {-1, +1}: even arms -> +1, odd arms -> -1.
+        y[idx] = 1.0 if c % 2 == 0 else -1.0
+
+    return X, y
 
 
 def accuracy(pred: "Stage12_Tensor", y) -> float:
