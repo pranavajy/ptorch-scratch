@@ -40,8 +40,8 @@ sys.path.insert(0, _ROOT)
 # --- Import the things under test, skipping cleanly if not ready yet. --------
 # `code.py` ADDS iterate_minibatches / train_minibatch / gradient_noise /
 # epochs_to_threshold, and re-exports MLP (stage_11), mse_loss (stage_12),
-# SGD (stage_13), Tensor (stage_08), make_moons (stage_14) -- all via
-# dlfs.stage_import.
+# SGD (stage_14), Tensor (stage_12), accuracy/train (stage_15) -- all via
+# dlfs.stage_import.  The moons dataset used here is a local fixture.
 try:
     # --- resolve sibling code.py (avoid stdlib `code` collision) ---
     import importlib.util as _ilu
@@ -62,7 +62,6 @@ try:
         epochs_to_threshold,
         gradient_noise,
         iterate_minibatches,
-        make_moons,
         mse_loss,
         train_minibatch,
     )
@@ -101,10 +100,19 @@ def central_diff(f, x, eps=EPS):
     return grad
 
 
-def toy_data(n=40, seed=0):
-    """A small reproducible moons dataset for the loop / noise tests."""
-    X, y = make_moons(n=n, noise=0.1, seed=seed)
-    return np.asarray(X, dtype=float), np.asarray(y, dtype=float)
+def toy_data(n=40, seed=0, noise=0.1):
+    """A small reproducible moons dataset (local fixture): X (n, 2), y (n,) in {-1, +1}."""
+    rng = np.random.default_rng(seed)
+    n_out = n // 2
+    n_in = n - n_out
+    t_out = np.linspace(0.0, np.pi, n_out)
+    x_out = np.stack([np.cos(t_out), np.sin(t_out)], axis=1)
+    t_in = np.linspace(0.0, np.pi, n_in)
+    x_in = np.stack([1.0 - np.cos(t_in), 0.5 - np.sin(t_in)], axis=1)
+    X = np.concatenate([x_out, x_in], axis=0).astype(np.float64)
+    y = np.concatenate([np.ones(n_out), -np.ones(n_in)]).astype(np.float64)
+    X += rng.normal(0.0, noise, size=X.shape)
+    return X, y
 
 
 # ===========================================================================

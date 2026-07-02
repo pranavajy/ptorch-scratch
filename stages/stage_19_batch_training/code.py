@@ -11,7 +11,7 @@ from typing import Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 
-# Reused framework: autodiff, model, loss, optimizers, datasets + full-batch driver.
+# Reused framework: autodiff, model, loss, optimizers + full-batch driver.
 from dlfs import stage_import
 
 Stage12_Tensor = stage_import("stage_12", "Tensor")
@@ -19,9 +19,7 @@ Stage11_MLP = stage_import("stage_11", "MLP")
 Stage12_mse_loss = stage_import("stage_12", "mse_loss")
 Stage14_Optimizer, Stage14_SGD = stage_import("stage_14", "Optimizer", "SGD")
 Stage18_Adam = stage_import("stage_18", "Adam")
-Stage15_make_moons, Stage15_make_spiral, Stage15_accuracy, Stage15_train = stage_import(
-    "stage_15", "make_moons", "make_spiral", "accuracy", "train"
-)
+Stage15_accuracy, Stage15_train = stage_import("stage_15", "accuracy", "train")
 
 # Re-export under canonical names for this stage's callers and later stages.
 Tensor = Stage12_Tensor
@@ -30,8 +28,6 @@ mse_loss = Stage12_mse_loss
 Optimizer = Stage14_Optimizer
 SGD = Stage14_SGD
 Adam = Stage18_Adam
-make_moons = Stage15_make_moons
-make_spiral = Stage15_make_spiral
 accuracy = Stage15_accuracy
 train = Stage15_train
 

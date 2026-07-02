@@ -1,124 +1,121 @@
 """Stage 15: First training loop.
 
-Wires the imported Tensor/MLP/mse_loss/SGD into the canonical learning loop
-(forward -> loss -> backward -> step -> zero_grad) plus toy datasets, an
-accuracy metric, and a loss plotter. Every gradient comes from Tensor.backward().
+Wires the framework built so far -- ``Tensor`` (stage_08/11/12), ``MLP``
+(stage_11), ``mse_loss`` (stage_12), ``SGD`` (stage_14) -- into the canonical
+learning loop:
+
+    forward -> loss -> backward() -> step() -> zero_grad()
+
+plus the off-graph ``accuracy`` metric used to watch it learn.  The exercise
+is ``accuracy`` and ``train``; the ``plot_history`` helper is provided, and
+the toy datasets (``make_moons`` / ``make_spiral``) live in this stage's
+``test.py`` as fixtures.  Every gradient comes from ``Tensor.backward()`` --
+nothing here derives a gradient by hand.
 """
 
 from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 
+# Framework pieces built in earlier stages, re-exported under canonical names.
 from dlfs import stage_import
 
-# Framework pieces built in earlier stages, re-exported under canonical names.
 Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage11_MLP = stage_import("stage_11", "MLP")
 Stage12_mse_loss = stage_import("stage_12", "mse_loss")
 Stage14_SGD = stage_import("stage_14", "SGD")
-Stage11_Dense = stage_import("stage_11", "Dense")
 
 Tensor = Stage12_Tensor
 MLP = Stage11_MLP
 mse_loss = Stage12_mse_loss
 SGD = Stage14_SGD
-Dense = Stage11_Dense
 
 
-def make_moons(
-    n: int = 200, noise: float = 0.1, seed: Optional[int] = None
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Two interleaving half-moons. Returns X (n, 2) and y in {-1, +1} (n,).
+# --------------------------------------------------------------------------- #
+# Exercise 1: the accuracy metric (off-graph, read-only)
+# --------------------------------------------------------------------------- #
+def accuracy(pred: Union["Tensor", np.ndarray], y: Union["Tensor", np.ndarray]) -> float:
+    """Binary accuracy: the fraction of examples where sign(pred) == sign(y).
 
-    Generates a random toy dataset used to train and test the training loop:
-    a non-linearly-separable 2-class problem the MLP must learn to split.
-    `seed` makes the draw reproducible; `noise` is the per-point Gaussian jitter.
+    A metric, NOT a loss: it is read-only and off-graph.  Work on the raw
+    ``.data`` arrays (never build ``Tensor`` ops here -- nothing should ever
+    backprop through a metric).
+
+    Accepts a ``Tensor`` or a plain ndarray for either argument, and ``(N, 1)``
+    / ``(N,)`` shapes interchangeably: compare the flattened values.  Raise
+    ``ValueError`` if the two carry different numbers of elements.  A
+    prediction of exactly ``0.0`` has no sign, matches neither class, and
+    counts as wrong.
+
+    Returns a plain Python ``float`` in ``[0.0, 1.0]``.
     """
-    rng = np.random.default_rng(seed)
-    n_out = n // 2          # outer (upper) moon, label +1
-    n_in = n - n_out        # inner (lower) moon, label -1
-
-    # Outer moon: upper half-circle centered at origin.
-    t_out = np.linspace(0.0, np.pi, n_out)
-    x_out = np.stack([np.cos(t_out), np.sin(t_out)], axis=1)
-
-    # Inner moon: lower half-circle, shifted right and down so the two interlock.
-    t_in = np.linspace(0.0, np.pi, n_in)
-    x_in = np.stack([1.0 - np.cos(t_in), 0.5 - np.sin(t_in)], axis=1)
-
-    X = np.concatenate([x_out, x_in], axis=0).astype(np.float64)
-    y = np.concatenate([np.ones(n_out), -np.ones(n_in)]).astype(np.float64)
-
-    X += rng.normal(0.0, noise, size=X.shape)
-    return Tensor(X), Tensor(y)
-
-
-def make_spiral(
-    n_per_class: int = 100,
-    n_classes: int = 2,
-    noise: float = 0.2,
-    seed: Optional[int] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """n_classes-arm spiral. Returns X (n_per_class*n_classes, 2) and y in {-1, +1}.
-
-    Generates a random toy dataset used to train and test the training loop:
-    interleaved spiral arms, a harder non-linearly-separable 2-class problem.
-    `seed` makes the draw reproducible; `noise` is the per-point angular jitter.
-    """
-    rng = np.random.default_rng(seed)
-    X = np.zeros((n_per_class * n_classes, 2), dtype=np.float64)
-    y = np.zeros(n_per_class * n_classes, dtype=np.float64)
-
-    for c in range(n_classes):
-        idx = slice(c * n_per_class, (c + 1) * n_per_class)
-        r = np.linspace(0.0, 1.0, n_per_class)                       # radius 0 -> 1
-        # Each arm starts a full turn offset from the last; noise jitters the angle.
-        theta = (
-            np.linspace(c * 4.0, (c + 1) * 4.0, n_per_class)
-            + rng.normal(0.0, noise, size=n_per_class)
-        )
-        X[idx] = np.stack([r * np.sin(theta), r * np.cos(theta)], axis=1)
-        # Binary labels in {-1, +1}: even arms -> +1, odd arms -> -1.
-        y[idx] = 1.0 if c % 2 == 0 else -1.0
-
-    return Tensor(X), Tensor(y)
-
-
-def accuracy(pred: "Stage12_Tensor", y) -> float:
-    """Binary accuracy: fraction where sign(pred) == sign(y) (read-only, off-graph)."""
-    # TODO: compute accuracy from sign(pred) vs sign(y)
+    # TODO: implement the metric described above.
     raise NotImplementedError("accuracy")
 
 
+# --------------------------------------------------------------------------- #
+# Exercise 2: the training loop
+# --------------------------------------------------------------------------- #
 def train(
     model: "Stage11_MLP",
-    X: "Stage12_Tensor",
-    y: "Stage12_Tensor",
+    X: "Tensor",
+    y: "Tensor",
     *,
     lr: float = 0.1,
     epochs: int = 200,
     optimizer: Optional["Stage14_SGD"] = None,
-) -> List[float]:
-    """Run the training loop (forward -> mse_loss -> backward -> step -> zero_grad);
-    return per-epoch loss history. Defaults to SGD(model.parameters(), lr) if None.
+) -> Dict[str, List[float]]:
+    """Full-batch training: run the canonical loop from the README once per
+    epoch, using the imported ``mse_loss`` and this stage's ``accuracy``.
 
-    ``X`` and ``y`` must be ``Tensor`` instances (X: (N, n_in), y: (N,) or (N, 1));
-    raise TypeError otherwise. Wrap the NumPy arrays from make_moons/make_spiral
-    with ``Tensor(...)`` before calling."""
-    # TODO: implement the training loop
+    Contract (the tests pin every clause):
+      * ``X`` and ``y`` must be ``Tensor`` instances -- raise ``TypeError``
+        otherwise.  This guards the silent ``(N, 1) - (N,) -> (N, N)``
+        broadcast bug: raw ndarrays don't get to skip the shape checks below.
+      * ``X`` must be 2-D ``(N, n_in)``; ``y`` must be ``(N, 1)`` or ``(N,)``
+        -- normalize it to a ``(N, 1)`` column OFF-graph (a fresh leaf
+        ``Tensor``, not a graph op), and raise ``ValueError`` for any other
+        shape or when the row counts disagree.
+      * ``optimizer`` defaults to plain ``SGD`` over ``model.parameters()``
+        with ``lr``; when one is passed, use it as-is and ignore ``lr``.
+      * Per epoch, record the scalar loss (a plain ``float``) and the accuracy,
+        both from that same forward pass (metrics log the model the step was
+        computed on, i.e. before the update).
+      * Return ``{"loss": [...], "accuracy": [...]}`` -- one float per epoch.
+        After ``train`` returns, every parameter's ``.grad`` is all-zeros, so
+        the caller can immediately ``backward()`` something else.
+    """
+    # TODO: implement the loop per the contract above (the README derives it).
     raise NotImplementedError("train")
 
 
-def plot_loss(history: Sequence[float], path: Optional[str] = None):
-    """Plot training loss vs epoch; save to path if given. Returns the Figure."""
+# --------------------------------------------------------------------------- #
+# Plot helper (provided)
+# --------------------------------------------------------------------------- #
+def plot_history(history: Dict[str, List[float]], path: Optional[str] = None):
+    """Plot the loss and accuracy curves from a ``train`` history dict.
+
+    Saves to ``path`` if given, otherwise shows the figure.  Returns the Figure.
+    """
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots()
-    ax.plot(range(1, len(history) + 1), history)
-    ax.set_xlabel("epoch")
-    ax.set_ylabel("loss")
-    ax.set_title("Training loss")
+
+    fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(10, 4))
+    epochs_axis = range(1, len(history["loss"]) + 1)
+
+    ax_loss.plot(epochs_axis, history["loss"])
+    ax_loss.set_xlabel("epoch")
+    ax_loss.set_ylabel("loss")
+    ax_loss.set_title("Training loss")
+
+    ax_acc.plot(epochs_axis, history["accuracy"])
+    ax_acc.set_xlabel("epoch")
+    ax_acc.set_ylabel("accuracy")
+    ax_acc.set_ylim(0.0, 1.05)
+    ax_acc.set_title("Training accuracy")
+
+    fig.tight_layout()
     if path is not None:
         fig.savefig(path)
     else:
