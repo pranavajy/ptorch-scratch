@@ -6,7 +6,7 @@ variant, built by subclassing the plain ``SGD`` from stage_14.
 
 from __future__ import annotations
 
-from typing import Callable, Iterable, List
+from typing import Iterable
 
 import numpy as np
 
@@ -65,16 +65,3 @@ class SGDMomentum(Stage14_SGD):
 
 # Backwards-compatible public alias used by the tests.
 Momentum = SGDMomentum
-
-
-def quadratic_descent(
-    optimizer_factory: Callable[["Tensor"], "Stage14_SGD"],
-    x0: np.ndarray,
-    A: np.ndarray,
-    b: np.ndarray,
-    steps: int,
-) -> List[float]:
-    """Minimize ``f(x) = 0.5 * x^T A x - b^T x`` (A SPD) using the closed-form
-    gradient ``grad f(x) = A @ x - b``; return ``f(x)`` after each of ``steps`` updates."""
-    # TODO: build a leaf p from x0, run `steps` optimizer updates, record f(x) each step.
-    raise NotImplementedError("quadratic_descent")

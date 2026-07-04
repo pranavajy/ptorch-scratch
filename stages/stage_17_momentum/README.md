@@ -44,9 +44,7 @@ from `stage_14`. Setting $\beta=0$ must recover that plain `SGD` exactly.
 - `zero_grad`: inherited unchanged from `stage_14`'s `SGD` (no override needed).
 - `reset(self) -> None`: zero every velocity buffer (useful between independent runs).
 - `__repr__`: e.g. `SGDMomentum(lr=0.1, beta=0.9, nesterov=False)`.
-- Also implement the free function `quadratic_descent(optimizer_factory, x0, A, b, steps)`:
-  - Minimize the quadratic $f(x) = \tfrac12 x^\top A x - b^\top x$ (so $\nabla f = A x - b$) by running `steps` optimizer steps on a single parameter `Tensor` initialized to `x0`; set `p.grad = A @ p.data - b` each iteration (no autodiff needed — it is the exact gradient).
-  - Return the list of `f(x)` values per step. Used by the tests to compare convergence of `SGD` vs `Momentum` vs Nesterov.
+- The convergence benchmark `quadratic_descent(optimizer_factory, x0, A, b, steps)` is provided by the test harness (`test.py`), not part of the exercise: it minimizes the quadratic $f(x) = \tfrac12 x^\top A x - b^\top x$ (exact gradient $\nabla f = A x - b$, set into `p.grad` by hand — no autodiff) for `steps` optimizer updates and records `f(x)` per step, so the tests can compare convergence of `SGD` vs `Momentum` vs Nesterov.
 - Allowed tools: `numpy`, Python stdlib, your `stage_08` `Tensor` and `stage_14` `SGD`. **No** PyTorch / autograd / etc.
 
 **Done when**

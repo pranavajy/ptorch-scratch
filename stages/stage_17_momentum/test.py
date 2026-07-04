@@ -27,14 +27,11 @@ import pytest
 try:
     from dlfs import stage_import
 
-    Stage17_Momentum, Stage17_Tensor, Stage17_quadratic_descent = stage_import(
-        "stage_17", "Momentum", "Tensor", "quadratic_descent"
-    )
+    Stage17_Momentum, Stage17_Tensor = stage_import("stage_17", "Momentum", "Tensor")
     Stage14_SGD = stage_import("stage_14", "SGD")
     # Local short names for readability in the test body below.
     Tensor = Stage17_Tensor
     Momentum = Stage17_Momentum
-    quadratic_descent = Stage17_quadratic_descent
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
         f"stage_17 Momentum / stage_14 SGD / stage_08 Tensor not importable "
@@ -102,6 +99,24 @@ def quad_problem():
 def f_quad(x, A, b):
     x = np.asarray(x, dtype=float)
     return float(0.5 * x @ A @ x - b @ x)
+
+
+def quadratic_descent(optimizer_factory, x0, A, b, steps):
+    """Run ``steps`` optimizer updates on f(x) = 0.5 x^T A x - b^T x (A SPD).
+
+    Test harness, not part of the exercise: builds a leaf parameter from a
+    copy of ``x0``, feeds it the exact gradient ``A @ x - b`` each iteration
+    (no ``backward()`` needed), and returns the f(x) value after each step —
+    the loss curve the convergence tests compare across optimizers.
+    """
+    p = make_param(np.array(x0, dtype=float))
+    opt = optimizer_factory(p)
+    history = []
+    for _ in range(steps):
+        set_grad(p, A @ as_array(p) - b)
+        opt.step()
+        history.append(f_quad(as_array(p), A, b))
+    return history
 
 
 # --- Construction ------------------------------------------------------------
