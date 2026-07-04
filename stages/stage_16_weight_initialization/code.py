@@ -48,31 +48,3 @@ def he_uniform(n_in: int, n_out: int, *, seed: Optional[int] = None) -> np.ndarr
     """He/Kaiming uniform init for ReLU nets: U[-a, a], a = sqrt(6/n_in). Returns (n_in, n_out)."""
     # TODO: sample U[-a, a] so Var(W) = 2 / n_in.
     raise NotImplementedError("he_uniform")
-
-
-def init_dense(layer: "Stage11_Dense", W: np.ndarray, b: Optional[np.ndarray] = None) -> None:
-    """Overwrite a stage_11 Dense layer's params in place (swap .data on the same
-    leaf Tensors, reset .grad). W (n_in, n_out), b (n_out,)."""
-    # TODO: validate shape, swap .data on the same Tensor objects, reset .grad.
-    raise NotImplementedError("init_dense")
-
-
-def _apply_activation(t: "Stage12_Tensor", activation: str) -> "Stage12_Tensor":
-    """Apply an elementwise activation Tensor-op by name: {"tanh", "relu", "none"}."""
-    # TODO: dispatch to the matching Tensor op; raise ValueError on unknown name.
-    raise NotImplementedError("_apply_activation")
-
-
-def forward_activation_stats(
-    sizes: List[int],
-    init_fn,
-    activation: str,
-    *,
-    n_samples: int = 512,
-    seed: Optional[int] = None,
-) -> List[dict]:
-    """Measure post-activation statistics through a deep stack of Dense layers
-    (each init via init_fn, `activation` applied after each). Returns one dict per
-    layer with keys "mean", "std", "saturated" (abs>0.98), "dead" (==0)."""
-    # TODO: build/init each layer, forward a noise batch, collect per-layer stats.
-    raise NotImplementedError("forward_activation_stats")
