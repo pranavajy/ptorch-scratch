@@ -65,7 +65,8 @@ RTOL = 1e-6
 
 # --- A minimal parameter object matching the Tensor .data/.grad contract -----
 class Param:
-    """Tiny stand-in for a leaf ``Tensor``: just ``.data`` and ``.grad``."""
+    """Tiny stand-in for a leaf ``Tensor``: ``.data``/``.grad`` plus the two
+    hooks the stage_14 ``Optimizer`` contract touches (``shape``, ``zero_grad``)."""
 
     def __init__(self, data):
         self.data = np.asarray(data, dtype=float)
@@ -74,6 +75,9 @@ class Param:
     @property
     def shape(self):
         return self.data.shape
+
+    def zero_grad(self):
+        self.grad = np.zeros_like(self.data)
 
 
 def make_params(arrays):
