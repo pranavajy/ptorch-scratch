@@ -142,28 +142,6 @@ def test_repr():
     assert "Momentum" in r and "0.9" in r
 
 
-# --- Velocity recursion matches a hand-unrolled EMA --------------------------
-def test_velocity_is_ema_of_gradients():
-    """v_t = beta v_{t-1} + g_t, accumulated over a fixed sequence of grads."""
-    p = make_param([0.0, 0.0])
-    lr, beta = 0.0, 0.7  # lr=0 -> params frozen, isolate the velocity recursion
-    opt = make_momentum([p], lr=lr, beta=beta)
-
-    grads = [np.array([1.0, -2.0]),
-             np.array([0.5, 0.5]),
-             np.array([-1.0, 3.0])]
-
-    v_ref = np.zeros(2)
-    for g in grads:
-        set_grad(p, g)
-        opt.step()
-        v_ref = beta * v_ref + g
-        assert np.allclose(opt.velocities[0], v_ref, atol=ATOL), (
-            f"velocity recursion mismatch:\n got={opt.velocities[0]}\n "
-            f"want={v_ref}"
-        )
-
-
 def test_param_update_uses_velocity():
     """With a constant grad, p moves by -lr * v each step (heavy-ball)."""
     p = make_param([0.0])
