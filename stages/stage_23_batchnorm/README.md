@@ -6,9 +6,9 @@ distribution drifts again ("internal covariate shift"). BatchNorm fixes this
 *continuously*: it standardizes each feature across the batch, then rescales
 with learnable `gamma`/`beta`. This is the first layer whose backward you must
 **derive by hand** (the engine can't see through the batch statistics cheaply),
-and the first with distinct **train vs eval** behaviour, building on the
-`Dense`/`Module` conventions from `stage_16` and the regularization mindset of
-`stage_22`.
+and the second with distinct **train vs eval** behaviour, building on the layer
+conventions from `Dense` (`stage_10`) and the train/eval-mode flag from
+`Dropout` (`stage_22`).
 
 **Background** — For a batch $x_1,\dots,x_B$ of one feature, BN computes
 $$\mu=\tfrac1B\sum_i x_i,\quad \sigma^2=\tfrac1B\sum_i (x_i-\mu)^2,\quad
@@ -19,7 +19,14 @@ parameter grads are easy sums: $\partial L/\partial\gamma=\sum_i g_i\hat x_i$ an
 $\partial L/\partial\beta=\sum_i g_i$ where $g_i=\partial L/\partial y_i$. The
 hard part is $\partial L/\partial x_i$, because $\mu$ and $\sigma^2$ both depend
 on **every** $x_j$. Writing $\hat g_i=g_i\gamma$ and
-$\text{istd}=(\sigma^2+\epsilon)^{-1/2}$, the collapsed result is
+$\text{istd}=(\sigma^2+\epsilon)^{-1/2}$, route the upstream grad through the
+three intermediates:
+(1) through $\hat x$: $d\hat x_i = g_i\,\gamma$;
+(2) through $\sigma^2$: $d\sigma^2 = \sum_i d\hat x_i\,(x_i-\mu)\cdot(-\tfrac12)(\sigma^2+\epsilon)^{-3/2}$;
+(3) through $\mu$: $d\mu = \sum_i d\hat x_i\,(-\text{istd}) + d\sigma^2\cdot\operatorname{mean}\big(-2(x_i-\mu)\big)$;
+then summing the paths into each input,
+$\partial L/\partial x_i = d\hat x_i\,\text{istd} + d\sigma^2\cdot 2(x_i-\mu)/B + d\mu/B$,
+which collapses algebraically to
 $$\frac{\partial L}{\partial x_i}=\frac{\text{istd}}{B}\Big(B\,\hat g_i
 -\sum_j \hat g_j-\hat x_i\sum_j \hat g_j\hat x_j\Big).$$
 The two subtracted sums are exactly the gradients that flow back through $\mu$

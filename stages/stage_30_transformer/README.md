@@ -7,7 +7,7 @@
 hand-derived normalization pattern from `stage_23` (BatchNorm). This stage assembles them into the
 canonical **Transformer block** — sublayer + residual + normalization, repeated twice — and derives
 **LayerNorm backward by hand** (the per-token analogue of `stage_23`'s per-feature BatchNorm). One
-block is the unit that gets stacked into a GPT (`stage_32`) or ViT (`stage_33`).
+block is the unit that gets stacked into a GPT-style char-LM (`stage_35`) or ViT (`stage_31`).
 
 **Background** — A Transformer block is two residual sublayers: token mixing (attention) then a
 position-wise MLP. Each sublayer is wrapped with a residual connection and a **LayerNorm**. Unlike

@@ -85,6 +85,21 @@ class Tensor:
         Build the child via ``self._make_tensor(...)`` so a subclass survives the chain."""
         raise NotImplementedError("TODO: reshape forward via self._make_tensor + _backward (reshape grad back to self.shape)")
 
+    def transpose(self) -> "Tensor":
+        """Return a Tensor viewing this data with its axes reversed (np `.T`).
+
+        Like reshape, a pure rearrangement: no entry is created, destroyed, or
+        combined, so the backward is the inverse rearrangement — transpose the
+        upstream grad back (`out.grad.T`) and accumulate into `self.grad`.
+        Needed from stage_28 on: self-attention computes scores as `Q @ K.T`.
+        Build the child via ``self._make_tensor(...)`` so a subclass survives."""
+        raise NotImplementedError("TODO: transpose forward via self._make_tensor + _backward (transpose grad back)")
+
+    @property
+    def T(self) -> "Tensor":
+        """Transpose property: `t.T` == `t.transpose()` (mirrors NumPy)."""
+        raise NotImplementedError("TODO: return self.transpose()")
+
     @staticmethod
     def _accumulate(grad_into: "Tensor", incoming: np.ndarray) -> None:
         """Add `incoming` into grad_into.grad; sum-to-scalar if grad_into is 0-d

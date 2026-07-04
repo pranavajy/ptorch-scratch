@@ -1,4 +1,4 @@
-"""Tests for Stage 30: Vision Transformer.
+"""Tests for Stage 31: Vision Transformer.
 
 Checks the image-specific front end and head of a ViT (the parts this stage
 builds), plus the assembled forward pipeline:
@@ -12,11 +12,11 @@ builds), plus the assembled forward pipeline:
   * positional embeddings are actually used (patch-permutation invariance only
     holds when ``pos_embed`` is zeroed).
 
-The pieces from stage_24 (im2col/col2im) and stage_29 (TransformerBlock,
+The pieces from stage_25 (im2col/col2im) and stage_30 (TransformerBlock,
 LayerNorm) are loaded by this stage's code. If a dependency or the skeleton is
 not implemented yet, the affected test skips cleanly instead of erroring.
 
-Run with:  pytest stage_30_vision_transformer/test.py
+Run with:  pytest stage_31_vision_transformer/test.py
 """
 import os as _os
 import sys as _sys
@@ -46,7 +46,7 @@ try:
     from code import PatchEmbed, ViT, num_patches
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_30 ViT / its stage_24 / stage_29 deps not importable yet: {exc}",
+        f"stage_31 ViT / its stage_25 / stage_30 deps not importable yet: {exc}",
         allow_module_level=True,
     )
 

@@ -1,4 +1,4 @@
-"""Tests for Stage 34: Capstone -- tiny Transformer (char-level LM).
+"""Tests for Stage 35: Capstone -- tiny Transformer (char-level LM).
 
 Verifies the end-to-end integration: the tokenizer round-trips, ``get_batch``
 produces correctly-shifted (X, Y) windows, the model forward returns
@@ -10,10 +10,10 @@ in-vocabulary text. The gradient check uses central differences,
 
 against the analytic gradient from ``Tensor.backward()`` (stage_08), applied to
 the output-head weights of the model. Because the capstone leans on stages
-09/13/28/30/32, any test whose dependencies are still skeletons SKIPS cleanly
+12/13/28/30/32, any test whose dependencies are still skeletons SKIPS cleanly
 instead of erroring.
 
-Run with:  pytest stage_34_capstone_transformer/test.py
+Run with:  pytest stage_35_capstone_transformer/test.py
 """
 import os as _os
 import sys as _sys
@@ -47,7 +47,7 @@ try:
     from code import (
         CharTokenizer,
         TransformerLM,
-        Stage11_Tensor,
+        Stage12_Tensor,
         get_batch,
         lm_loss,
         sample,
@@ -55,12 +55,12 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_34 capstone / a prior stage not importable yet: {exc}",
+        f"stage_35 capstone / a prior stage not importable yet: {exc}",
         allow_module_level=True,
     )
 
-if Stage11_Tensor is None:  # pragma: no cover
-    pytest.skip("stage_11 Tensor not available", allow_module_level=True)
+if Stage12_Tensor is None:  # pragma: no cover
+    pytest.skip("stage_12 Tensor not available", allow_module_level=True)
 
 RNG = np.random.default_rng(35)
 EPS = 1e-5

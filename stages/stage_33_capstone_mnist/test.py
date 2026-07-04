@@ -1,12 +1,12 @@
-"""Tests for Stage 32: Capstone -- MNIST.
+"""Tests for Stage 33: Capstone -- MNIST.
 
-Covers the integration capstone that points the stage_31 ``mytorch`` framework
+Covers the integration capstone that points the stage_32 ``mytorch`` framework
 at MNIST:
   * load_mnist_idx     -- round-trips a synthetic IDX byte buffer (plain + gz),
                           and rejects wrong magic numbers;
   * preprocess         -- (N,784) in [0,1] when flatten, else (N,1,28,28);
   * make_loaders       -- yields Tensor batches of the right shape, optional
-                          validation split (stage_31 DataLoader);
+                          validation split (stage_32 DataLoader);
   * build_mlp          -- correct logit shape (B, 10) from a Sequential MLP;
   * evaluate           -- {"loss","acc"} on a loader, perfect classifier -> 1.0;
   * train_mnist        -- step count, falling loss, >= 0.90 acc on a tiny set;
@@ -14,7 +14,7 @@ at MNIST:
   * gradcheck          -- one-batch cross_entropy_loss(model(X),y).backward()
                           vs central differences on a parameter.
 
-Run: pytest stage_32_capstone_mnist/test.py
+Run: pytest stage_33_capstone_mnist/test.py
 """
 
 import gzip
@@ -37,7 +37,7 @@ if _ROOT not in sys.path:
 
 
 def _load_code():
-    """Load this stage's code.py by file path (it imports stage_31 via dlfs)."""
+    """Load this stage's code.py by file path (it imports stage_32 via dlfs)."""
     path = os.path.join(_HERE, "code.py")
     spec = _ilu.spec_from_file_location("_stage33_code", path)
     mod = _ilu.module_from_spec(spec)
@@ -60,7 +60,7 @@ try:
     cross_entropy_loss = CODE.cross_entropy_loss
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_32 capstone / stage_31 framework not importable yet: {exc}",
+        f"stage_33 capstone / stage_32 framework not importable yet: {exc}",
         allow_module_level=True,
     )
 
@@ -69,7 +69,7 @@ TOL = 1e-4
 
 
 # --------------------------------------------------------------------------- #
-# helper: skip cleanly if a *dependency* (stage_08/12/13/18/20/26) isn't
+# helper: skip cleanly if a *dependency* (stage_12/13/18/20/32) isn't
 # implemented yet, while still failing if THIS stage is the problem.
 # --------------------------------------------------------------------------- #
 def _requires(fn, *args, **kwargs):

@@ -15,7 +15,7 @@ $$Y[n,o,i,j] = b[o] + \sum_{c}\sum_{u=0}^{k_H-1}\sum_{v=0}^{k_W-1} X[n,c,\,s\,i 
 with stride $s$, symmetric pad $p$, dilation $d$. The **output size** along each spatial axis is
 $$H_{out} = \left\lfloor \frac{H + 2p - d(k_H-1) - 1}{s}\right\rfloor + 1,$$
 and likewise for $W_{out}$ (the dilated kernel spans $d(k-1)+1$ pixels). **im2col** unrolls every
-receptive field into a column: $X \to X_{col}$ of shape $(N\cdot H_{out}\cdot W_{out},\; C_{in}k_Hk_W)$,
+receptive field into a row: $X \to X_{col}$ of shape $(N\cdot H_{out}\cdot W_{out},\; C_{in}k_Hk_W)$,
 and the kernel flattens to $W_{row}$ of shape $(C_{out},\; C_{in}k_Hk_W)$. Then the whole forward is
 one matmul $Y_{col} = X_{col} W_{row}^{\top} + b$, exactly the `stage_07` pattern. So the backward
 borrows `stage_07`'s $dL/dA = G B^{\top}$, $dL/dB = A^{\top}G$. With $G = dL/dY_{col}$:

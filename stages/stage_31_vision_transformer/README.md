@@ -35,8 +35,9 @@ the class token grad is just the upstream grad of row 0 summed over the batch.
 - [Vision Transformer (ViT) — paper + intuition](https://www.youtube.com/watch?v=j3VNqtJUoz0) — why patch+Transformer replaces convolution and how the pieces connect.
 
 **Exercise** — Implement, in `code.py`, the ViT front end / head as explicit
-NumPy `forward`/`backward` (the `stage_27`–`stage_30` paradigm: parameters are
-`np.ndarray`, backward is hand-written from a forward cache). Reuse `im2col`
+NumPy `forward`/`backward` (the pure-NumPy paradigm of `stage_27` and `stage_30`:
+parameters are `np.ndarray`, backward hand-written from a forward cache; note
+`stage_28`/`stage_29` are Tensor-autograd). Reuse `im2col`
 (`stage_25`), `TransformerBlock` + `LayerNorm` (`stage_30`) via `dlfs.stage_import`.
 Allowed tools: NumPy (array math only) + stdlib + your prior-stage code. **No
 autodiff library.** Inputs are images `(N, C, H, W)`; `H`, `W` must be divisible

@@ -1,6 +1,6 @@
-"""Tests for Stage 19: DataLoader.
+"""Tests for Stage 20: DataLoader.
 
-Covers the data-feeding plumbing built on top of stage_18:
+Covers the data-feeding plumbing built on top of stage_19:
   * Dataset       -- len / getitem (int, slice, index-array), shape mismatch
                      raises, dtype is float64;
   * DataLoader    -- batch count (drop_last vs ceil), exact batch widths,
@@ -13,7 +13,7 @@ Covers the data-feeding plumbing built on top of stage_18:
                      down, and a central-difference gradcheck of one batch's
                      mse_loss(...).backward() vs the autodiff .grad.
 
-Run: pytest stage_19_dataloader/test.py
+Run: pytest stage_20_dataloader/test.py
 """
 import os as _os
 import sys as _sys
@@ -26,7 +26,7 @@ import pytest
 
 # Make both this stage's ``code.py`` and the repo-root ``dlfs`` shim importable
 # when pytest is run from anywhere. ``code.py`` imports its prior-stage pieces
-# (Tensor from stage_08; MLP / mse_loss / SGD / train_minibatch from stage_18)
+# (Tensor from stage_12; MLP / mse_loss / SGD / train_minibatch from stage_19)
 # via ``dlfs.stage_import`` and re-exports them, so the tests pull everything
 # from this stage's extended module.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -57,7 +57,7 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_19 DataLoader (or a stage_08 / stage_18 piece it imports) "
+        f"stage_20 DataLoader (or a stage_12 / stage_19 piece it imports) "
         f"not importable yet: {exc}",
         allow_module_level=True,
     )

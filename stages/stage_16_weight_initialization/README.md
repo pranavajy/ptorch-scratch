@@ -1,7 +1,7 @@
 # Stage 16: Weight initialization
 
 **Context** — You can now stack `Dense` layers from `stage_10` and pass signals
-through the activations from `stage_15`. But *how* you fill the weight matrices
+through the activations from the engine (`tanh`/`relu`, stages 05/08). But *how* you fill the weight matrices
 before training decides whether a deep net learns at all. This stage derives the
 variance-propagation rule for a forward pass and uses it to build the two
 canonical schemes — **Xavier/Glorot** (for `tanh`/linear) and **He/Kaiming**

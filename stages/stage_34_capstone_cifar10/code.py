@@ -13,7 +13,7 @@ import numpy as np
 
 from dlfs import stage_import
 
-# Tensor (11) + mytorch optim/data (32) + cross-entropy (13, batched) + Dense (11) + conv tower (25).
+# Tensor (stage_08 via stage_12); mytorch optim/data (stage_32); cross-entropy (stage_13, batched); Dense (stage_11); conv tower (stage_25).
 Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage32_Adam, Stage32_DataLoader, Stage32_Dataset = stage_import(
     "stage_32", "Adam", "DataLoader", "Dataset"

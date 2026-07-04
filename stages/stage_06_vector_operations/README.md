@@ -44,9 +44,11 @@ has gradient $1$ to every element.
   - `__add__`, `__sub__`, `__mul__` (elementwise, Hadamard) accepting another
     `Vec` of equal length **or** a scalar (`int`/`float`/`Value`) that
     broadcasts to every element. Support reflected ops (`scalar + vec`).
-    Mismatched non-scalar lengths raise `ValueError`.
+    Mismatched non-scalar lengths must raise (a bare `assert` /
+    `AssertionError` is fine — the tests check `AssertionError`).
   - `dot(self, other) -> Value`: the scalar $\sum_i a_i b_i$ built from `Value`
-    `*`/`+` (so it is differentiable). Length mismatch raises `ValueError`.
+    `*`/`+` (so it is differentiable). Length mismatch must raise (a bare
+    `assert` / `AssertionError` is fine — the tests check `AssertionError`).
   - `sum(self) -> Value`: returns $\sum_i a_i$ as a single `Value`.
   - `relu(self) -> Vec`: elementwise, using the imported `Value.relu()`:
     $\mathrm{relu}(x)=\max(0,x)$, gradient $1$ if $x>0$ else $0$.

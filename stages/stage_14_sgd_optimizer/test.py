@@ -1,4 +1,4 @@
-"""Tests for Stage 13: SGD optimizer.
+"""Tests for Stage 14: SGD optimizer.
 
 These tests verify the optimizer mechanics on top of the ``Tensor`` engine from
 stage_08:
@@ -16,7 +16,7 @@ stage_08:
 If stage_08's ``Tensor`` or this stage's ``SGD`` is not yet implemented, the
 suite skips rather than erroring, so you can run it incrementally.
 
-Run with:  pytest stage_13_sgd_optimizer/test.py
+Run with:  pytest stage_14_sgd_optimizer/test.py
 """
 import os as _os
 import sys as _sys
@@ -33,7 +33,7 @@ sys.path.insert(0, _HERE)
 sys.path.insert(0, _ROOT)
 
 # --- Import the things under test, skipping cleanly if not ready yet. --------
-# code.py pulls Tensor from stage_08 via dlfs.stage_import; importing it here
+# code.py pulls Tensor from stage_12 via dlfs.stage_import; importing it here
 # runs that import (it must succeed even while the SGD bodies are skeletons).
 try:
     # --- resolve sibling code.py (avoid stdlib `code` collision) ---
@@ -51,7 +51,7 @@ try:
     from code import SGD, Optimizer, Tensor
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_13 SGD / stage_08 Tensor not importable yet: {exc}",
+        f"stage_14 SGD / stage_08 Tensor not importable yet: {exc}",
         allow_module_level=True,
     )
 

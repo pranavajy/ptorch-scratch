@@ -1,7 +1,7 @@
-"""Tests for Stage 17: Adam (+ the RMSProp / AdamW it builds on).
+"""Tests for Stage 18: Adam (+ the RMSProp / AdamW it builds on).
 
 This stage sits on top of the optimizer chain. ``Optimizer`` (base) and ``SGD``
-come from ``stage_13`` and ``Momentum`` from ``stage_16``; this stage's
+come from ``stage_14`` and ``Momentum`` from ``stage_17``; this stage's
 ``code.py`` re-exports them (via ``dlfs.stage_import``) and ADDS ``RMSProp``,
 ``Adam`` and ``AdamW``. The tests import everything from this stage's ``code.py``
 so they run against the extended family.
@@ -19,10 +19,10 @@ feeding it to the optimizer:
 
     dL/dtheta_i ~= (L(theta + eps e_i) - L(theta - eps e_i)) / (2 eps)
 
-If stage_17 (or the stage_13 / stage_16 it imports) is not implemented yet, the
+If stage_18 (or the stage_14 / stage_17 it imports) is not implemented yet, the
 suite skips cleanly.
 
-Run with:  pytest stage_17_adam/test.py
+Run with:  pytest stage_18_adam/test.py
 """
 import os as _os
 import sys as _sys
@@ -36,7 +36,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # --- Import the things under test, skipping cleanly if not ready yet. --------
-# Optimizer / SGD originate in stage_13, Momentum in stage_16; this stage's
+# Optimizer / SGD originate in stage_14, Momentum in stage_17; this stage's
 # code.py re-exports them and defines RMSProp / Adam / AdamW on top.
 try:
     # --- resolve sibling code.py (avoid stdlib `code` collision) ---
@@ -54,7 +54,7 @@ try:
     from code import Optimizer, SGD, Momentum, RMSProp, Adam, AdamW
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_17 optimizers not importable yet: {exc}",
+        f"stage_18 optimizers not importable yet: {exc}",
         allow_module_level=True,
     )
 
@@ -70,6 +70,10 @@ class Param:
     def __init__(self, data):
         self.data = np.asarray(data, dtype=float)
         self.grad = np.zeros_like(self.data)
+
+    @property
+    def shape(self):
+        return self.data.shape
 
 
 def make_params(arrays):
@@ -152,10 +156,10 @@ def test_step_leaves_grad_untouched():
 
 
 # ===========================================================================
-# SGD / Momentum (imported from stage_13 / stage_16, used here unchanged)
+# SGD / Momentum (imported from stage_14 / stage_17, used here unchanged)
 # ===========================================================================
 def test_sgd_plain_step():
-    """stage_13 SGD is exactly p.data -= lr * p.grad."""
+    """stage_14 SGD is exactly p.data -= lr * p.grad."""
     lr = 0.05
     data = np.array([1.0, -2.0, 3.0])
     grad = np.array([0.5, 0.5, -1.0])
@@ -168,7 +172,7 @@ def test_sgd_plain_step():
 
 
 def test_momentum_accumulates():
-    """stage_16 Momentum: velocity grows as g, g(1+b), g(1+b+b^2), ..."""
+    """stage_17 Momentum: velocity grows as g, g(1+b), g(1+b+b^2), ..."""
     lr, b = 0.1, 0.9
     g = np.array([1.0, -2.0])
     p = Param(np.zeros(2))

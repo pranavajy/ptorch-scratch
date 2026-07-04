@@ -20,7 +20,7 @@ drop_last, seed) from a per-epoch **iterator** built by `__iter__`, so the *same
 loader object can be looped over for many epochs and re-shuffles each time (a fresh
 permutation per `__iter__`);
 (3) `drop_last`, which drops the final ragged batch of size $N\bmod B$ so every
-yielded batch is exactly $B$ wide — important once BatchNorm (`stage_21`) needs a
+yielded batch is exactly $B$ wide — important once BatchNorm (`stage_23`) needs a
 fixed batch shape;
 (4) a `train_val_split` that partitions the row indices **once** (held-out
 validation never leaks into training).
@@ -50,6 +50,6 @@ $\sigma^2/B$ exactly as in `stage_19`.
 **Done when**
 - `pytest stage_20_dataloader/test.py` passes.
 - `len(loader)` equals `N // B` with `drop_last=True` and `ceil(N / B)` otherwise; with `drop_last=True` every yielded batch has exactly `B` rows.
-- Iterating the **same** `DataLoader` twice yields all `N` rows each time; with `shuffle=True` the two epoch orderings differ; with `shuffle=False` they are identical and in `arange` order.
+- Iterating the **same** `DataLoader` twice yields all `N` rows each time; with `shuffle=True` the within-epoch order is a permutation (and with `seed=None` two epochs generally differ; a fixed `seed` gives reproducible epochs); with `shuffle=False` they are identical and in `arange` order.
 - `train_val_split` index sets are disjoint, cover all `N`, sized `round(val_frac*N)`, and deterministic per seed.
 - `train_with_loader` runs `epochs * len(loader)` steps and the epoch loss trends down; central-difference gradcheck: `p.grad` from one batch's `mse_loss(...).backward()` matches `(f(p+eps)-f(p-eps))/(2*eps)` within `atol ~ 1e-5`.

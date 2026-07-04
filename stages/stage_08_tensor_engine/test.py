@@ -352,6 +352,44 @@ def test_matmul_vector_dot_produces_scalar_backward():
     assert a.grad.shape == a.data.shape and b.grad.shape == b.data.shape
 
 
+def test_matmul_vector_right_batched():
+    # (b,n) @ (n,) -> (b,) : a batch of rows against one weight vector.
+    X = Tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])  # (3,2)
+    w = Tensor([0.5, -1.0])                            # (2,)
+    y = X @ w                                          # (3,)
+    assert y.shape == (3,)
+    assert np.allclose(y.data, X.data @ w.data)
+    y.backward()                                       # seeds G = ones((3,))
+    assert np.allclose(X.grad, np.outer(np.ones(3), w.data)), "dL/dX must be outer(G, w)"
+    assert np.allclose(w.grad, X.data.T @ np.ones(3)), "dL/dw must be X.T @ G"
+    assert X.grad.shape == X.data.shape and w.grad.shape == w.data.shape
+
+
+def test_matmul_gradcheck_central_difference():
+    # Independent numeric check of matmul backward — perturb every entry of A
+    # and B and compare the slope of sum(A@B) against the autodiff grads.
+    rng = np.random.default_rng(0)
+    A0 = rng.standard_normal((2, 3))
+    B0 = rng.standard_normal((3, 2))
+    A, B = Tensor(A0), Tensor(B0)
+    (A @ B).backward()                                 # seeds G = ones((2,2))
+
+    for arr, tensor in ((A0, A), (B0, B)):
+        num = np.zeros_like(arr)
+        it = np.nditer(arr, flags=["multi_index"])
+        while not it.finished:
+            idx = it.multi_index
+            orig = arr[idx]
+            arr[idx] = orig + EPS
+            fp = float(np.sum(A0 @ B0))
+            arr[idx] = orig - EPS
+            fm = float(np.sum(A0 @ B0))
+            arr[idx] = orig
+            num[idx] = (fp - fm) / (2 * EPS)
+            it.iternext()
+        assert np.allclose(tensor.grad, num, rtol=1e-4, atol=TOL)
+
+
 # --------------------------------------------------------------------------- #
 # reshape: pure rearrangement, grad flows back under the inverse reshape
 # --------------------------------------------------------------------------- #
@@ -401,6 +439,43 @@ def test_reshape_records_graph():
     x = Tensor([1.0, 2.0, 3.0, 4.0])
     z = x.reshape(2, 2)
     assert z._prev == (x,)
+
+
+# --------------------------------------------------------------------------- #
+# transpose: axis reversal, grad flows back under the inverse transpose
+# --------------------------------------------------------------------------- #
+def test_transpose_forward_and_graph():
+    x = Tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])   # (2,3)
+    z = x.transpose()
+    assert z.shape == (3, 2)
+    assert np.allclose(z.data, x.data.T)
+    assert z._prev == (x,)
+
+
+def test_T_property_matches_transpose():
+    x = Tensor([[1.0, 2.0], [3.0, 4.0]])
+    assert np.allclose(x.T.data, x.data.T)
+
+
+def test_transpose_backward_routes_grad():
+    # square after transpose so dz/dx = 2x must land back in the original slots
+    x = Tensor([[1.0, 2.0], [3.0, 4.0]])
+    z = x.transpose() ** 2
+    z.backward()
+    assert np.allclose(x.grad, 2.0 * x.data)
+    assert x.grad.shape == x.data.shape
+
+
+def test_transpose_in_matmul_attention_pattern():
+    # the Q @ K.T pattern stage_28 self-attention is built on
+    Q = Tensor([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])   # (3,2)
+    K = Tensor([[0.5, -1.0], [2.0, 0.0], [1.0, 1.0]])  # (3,2)
+    S = Q @ K.T                                         # (3,3)
+    assert np.allclose(S.data, Q.data @ K.data.T)
+    S.backward()                                        # seeds G = ones((3,3))
+    G = np.ones((3, 3))
+    assert np.allclose(Q.grad, G @ K.data), "dL/dQ of Q@K.T must equal G @ K"
+    assert np.allclose(K.grad, G.T @ Q.data), "dL/dK of Q@K.T must equal G.T @ Q"
 
 
 # --------------------------------------------------------------------------- #

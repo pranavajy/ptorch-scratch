@@ -5,7 +5,7 @@
 **Background** — Training is iterative descent on the loss surface. With parameters $\theta$ (the weight/bias `Tensor`s of every layer) and a scalar loss $L(\theta)$, each epoch repeats:
 
 1. **forward** — $\hat y = f_\theta(X)$, then $L = \mathrm{mse}(\hat y, y)$;
-2. **backward** — `L.backward()` fills every `p.grad` $= \partial L / \partial p$ via the autodiff engine;
+2. **backward** — `L.backward()` fills every `p.grad` $= \partial L / \partial p$ via the autodiff engine (calling `loss.backward()` directly is enough; it seeds the scalar output grad to 1);
 3. **step** — $\theta \leftarrow \theta - \eta\, \partial L/\partial \theta$ (that is `optimizer.step()`);
 4. **zero-grad** — reset every `p.grad` to zeros (`optimizer.zero_grad()`).
 
@@ -27,7 +27,7 @@ One integration trap this stage forces you through: the model outputs shape `(N,
   - `X` and `y` must be `Tensor`s — raise `TypeError` otherwise (this is what protects you from the `(N, N)` broadcast trap above).
   - `X` must be 2-D `(N, n_in)`; `y` must be `(N, 1)` or `(N,)` (normalize to a `(N, 1)` column **off-graph**, e.g. `Tensor(y.data.reshape(-1, 1))`); raise `ValueError` on any other shape or when the row counts disagree.
   - If `optimizer is None`, build `SGD(model.parameters(), lr)`; when an optimizer IS passed, use it and ignore `lr`.
-  - Each epoch: forward → `mse_loss` → `loss.backward()` → `optimizer.step()` → `optimizer.zero_grad()`, then record `float(loss.data)` and `accuracy(pred, y)` computed from that same forward pass.
+  - Each epoch: forward → `mse_loss` → `loss.backward()` → `optimizer.step()` → `optimizer.zero_grad()`, then record `float(loss.data)` and the epoch's accuracy (compute `accuracy(pred, y)` from the same `pred` used for the loss — do not re-run the model after the update).
   - Return `{"loss": [...], "accuracy": [...]}`, one float per epoch. After `train` returns, every parameter's `.grad` is all-zeros (the loop ends on `zero_grad`), so the caller can immediately `backward()` something else.
 - Allowed tools: `numpy`, `matplotlib` (plot helper only), Python stdlib, and the imported `stage_08`–`stage_14` code. **No** PyTorch/autograd/etc.
 

@@ -163,6 +163,10 @@ sums-to-scalar when the operand is a 0-d constant.
   just the **inverse reshape**: forward `self.data.reshape(shape)`; backward `self.grad += out.grad.reshape(self.data.shape)`.
   Accept varargs (`t.reshape(2, 3)`) or a single tuple (`t.reshape((2, 3))`), and a `-1` placeholder
   NumPy infers (`t.reshape(-1)` flattens). Later stages reshape between conv feature maps and dense layers.
+- **Transpose**: `transpose()` plus the `T` property (`t.T`) — the other pure rearrangement: forward
+  `self.data.T` (axes reversed); backward transposes the upstream grad back
+  (`self.grad += out.grad.T`). Self-attention (`stage_28`) computes its score matrix as `Q @ K.T`, so
+  the engine must carry a differentiable transpose.
 - **Matmul**: `__matmul__` (the `@` operator) pushing `G @ B.T` to the left operand and `A.T @ G` to the
   right — the rule you derived in §2. That rule is exact for 2-D operands; also handle the 1-D forms the
   neuron / dense layer use (`(n,)@(n,)`→scalar, `(n,)@(n,m)`→`(m,)`, batched `(b,n)@(n,)`→`(b,)`). For a
@@ -184,8 +188,9 @@ every gradient yourself; never call a NumPy autograd/`grad` helper.
 
 - `pytest stage_08_tensor_engine/test.py` passes.
 - Central-difference gradcheck on `+`, `*`, `**`, `-`, `/`, `relu`, `tanh`, `exp`, `log`, `@` matches
-  analytic `grad` within `1e-6` (elementwise gradcheck on 0-d tensors — no `.sum()` until stage_12;
-  matmul gradcheck seeds the output grad with ones; tolerance relaxed near ReLU kinks).
+  analytic `grad` within tolerance (`rtol=1e-4`, absolute floor `1e-6` — the bar the tests actually
+  assert) (elementwise gradcheck on 0-d tensors — no `.sum()` until stage_12; matmul gradcheck seeds
+  the output grad with ones; tolerance relaxed near ReLU kinks).
 - A reused tensor accumulates gradient from every path; `backward()` seeds with `ones_like` and fills
   `.grad` for every leaf; `data`/`grad` stay `float64` ndarrays of identical shape.
 

@@ -10,7 +10,7 @@ from typing import List, Optional
 
 import numpy as np
 
-# Tensor (09); Dense (11); losses (14); SGD (15); Adam (19); DataLoader/Dataset (21).
+# Tensor (stage_08 via stage_12); Dense (stage_11); losses (stage_12/13); SGD (stage_14); Adam (stage_18); DataLoader/Dataset (stage_20).
 from dlfs import stage_import
 
 Stage12_Tensor = stage_import("stage_12", "Tensor")

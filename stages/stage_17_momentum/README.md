@@ -40,7 +40,7 @@ from `stage_14`. Setting $\beta=0$ must recover that plain `SGD` exactly.
 - `step(self) -> None`:
   - For each `(p, v)`: read `g = p.grad`, update `v = beta * v + g` (heavy-ball) in place / stored back into `self.velocities`.
   - Update `p.data -= lr * v` when `nesterov=False`, or `p.data -= lr * (g + beta * v)` when `nesterov=True`.
-  - Skip a parameter whose `grad` is `None`/all-zero only if `stage_14` did; otherwise treat zero grad normally.
+  - Skip a parameter whose `.grad` is `None` (same contract as `stage_14`'s SGD).
 - `zero_grad`: inherited unchanged from `stage_14`'s `SGD` (no override needed).
 - `reset(self) -> None`: zero every velocity buffer (useful between independent runs).
 - `__repr__`: e.g. `SGDMomentum(lr=0.1, beta=0.9, nesterov=False)`.

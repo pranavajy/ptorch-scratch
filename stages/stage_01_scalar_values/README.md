@@ -43,6 +43,6 @@ You will *not* derive analytic gradients in this stage — you only verify, nume
 
 **Done when**
 
-- [X] `pytest stage_01_scalar_values/test.py` passes.
-- [X] `Value` supports `+ - * / ** neg` and mixed int/float operands on both sides.
-- [X] The central-difference test confirms numerical derivatives of `Value` expressions exist and match the expected slope within tolerance.
+- [ ] `pytest stage_01_scalar_values/test.py` passes.
+- [ ] `Value` supports `+ - * / ** neg` and mixed int/float operands on both sides.
+- [ ] The central-difference test confirms numerical derivatives of `Value` expressions exist and match the expected slope within tolerance.

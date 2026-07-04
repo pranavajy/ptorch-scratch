@@ -13,7 +13,7 @@ import numpy as np
 
 from dlfs import stage_import
 
-# Tensor (09); MLP/mse_loss/SGD/train_minibatch (19).
+# Tensor (stage_08 engine via stage_12); MLP/mse_loss/SGD/train_minibatch re-exported by stage_19.
 Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage19_MLP, Stage19_mse_loss, Stage19_SGD, Stage19_train_minibatch = stage_import(
     "stage_19", "MLP", "mse_loss", "SGD", "train_minibatch"

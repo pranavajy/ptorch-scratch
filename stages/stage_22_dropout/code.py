@@ -1,4 +1,4 @@
-"""Stage 21: Inverted dropout (train/eval-mode layer) on the stage_12 Tensor.
+"""Stage 22: Inverted dropout (train/eval-mode layer) on the Tensor engine (stage_08, via stage_12).
 
 Inverted dropout with keep prob ``p``:
     train:  m ~ Bernoulli(p) elementwise, y = (m * x) / p
@@ -42,9 +42,10 @@ class Dropout:
         # TODO: delegate to __call__.
         raise NotImplementedError("Dropout.forward")
 
-    def train(self) -> "Dropout":
-        """Switch to training mode (sample + scale). Returns ``self``."""
-        # TODO: set training mode.
+    def train(self, mode: bool = True) -> "Dropout":
+        """Set ``self.training = mode`` (True -> sample + scale, False -> eval).
+        Returns ``self``."""
+        # TODO: set self.training = mode.
         raise NotImplementedError("Dropout.train")
 
     def eval(self) -> "Dropout":
@@ -99,9 +100,10 @@ class MLPDropout(Stage11_MLP):
         # TODO: delegate to forward.
         raise NotImplementedError("MLPDropout.__call__")
 
-    def train(self) -> "MLPDropout":
-        """Put the model AND every owned Dropout in train mode. Returns self."""
-        # TODO: set training mode on self and all dropouts.
+    def train(self, mode: bool = True) -> "MLPDropout":
+        """Set ``self.training = mode`` on the model AND every owned Dropout.
+        Returns self."""
+        # TODO: set self.training = mode on self and all dropouts.
         raise NotImplementedError("MLPDropout.train")
 
     def eval(self) -> "MLPDropout":

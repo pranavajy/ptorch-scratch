@@ -1,4 +1,4 @@
-"""Tests for Stage 27: Self-Attention.
+"""Tests for Stage 28: Self-Attention.
 
 Checks the forward construction of single-head scaled dot-product self-attention
 (shapes, row-stochastic attention weights, the 1/sqrt(d_k) scaling, the causal
@@ -11,7 +11,7 @@ compared against the analytic gradient produced by ``Tensor.backward()`` from
 stage_08. If stage_08's ``Tensor`` or this stage's ``SelfAttention`` is not
 implemented yet, the suite skips cleanly instead of erroring.
 
-Run with:  pytest stage_27_self_attention/test.py
+Run with:  pytest stage_28_self_attention/test.py
 """
 import os as _os
 import sys as _sys
@@ -41,7 +41,7 @@ try:
     from code import SelfAttention, Tensor, causal_mask
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_27 self-attention / stage_08 Tensor not importable yet: {exc}",
+        f"stage_28 self-attention / stage_08 Tensor not importable yet: {exc}",
         allow_module_level=True,
     )
 

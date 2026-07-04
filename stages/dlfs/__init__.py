@@ -1,18 +1,18 @@
 """dlfs — shared import shim for the *Build Deep Learning From Scratch* curriculum.
 
-Every stage lives in its own directory (``stage_09_tensor_engine/`` etc.) and
+Every stage lives in its own directory (``stage_08_tensor_engine/`` etc.) and
 exposes its public symbols from ``code.py``.  Because those directory names are
-not valid Python identifiers (``stage_09_tensor_engine`` is fine, but we never
+not valid Python identifiers (``stage_08_tensor_engine`` is fine, but we never
 want to hard-code the full slug), this module gives every stage ONE clean way to
 pull symbols out of an earlier stage:
 
     from dlfs import stage_import
 
     # grab one symbol
-    Tensor = stage_import("stage_09", "Tensor")
+    Tensor = stage_import("stage_08", "Tensor")
 
     # grab several at once (returns them in order)
-    MLP, mse_loss, SGD = stage_import("stage_16", "MLP", "mse_loss", "SGD")
+    Optimizer, SGD = stage_import("stage_14", "Optimizer", "SGD")
 
 Design goals
 ------------
@@ -26,7 +26,7 @@ Design goals
 How resolution works
 ---------------------
 ``stage_import`` finds the sibling directory whose name starts with the given
-``stage_prefix`` (e.g. ``"stage_09"`` -> ``stage_09_tensor_engine/``), imports
+``stage_prefix`` (e.g. ``"stage_08"`` -> ``stage_08_tensor_engine/``), imports
 its ``code.py`` exactly once (cached in ``sys.modules``), and returns the named
 attributes.
 

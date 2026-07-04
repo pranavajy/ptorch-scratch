@@ -18,7 +18,7 @@ only attend to $\le t$), apply a final `LayerNorm`, then project to $V$ logits w
 `Linear` head. Train with shifted next-token targets: input `x = chars[:-1]`, target
 `y = chars[1:]`. The loss is mean softmax cross-entropy over all $B\cdot L$ positions,
 $$\mathcal{L}=-\frac{1}{BL}\sum_{b,t}\log p_{b,t,\,y_{b,t}},\qquad p=\operatorname{softmax}(\text{logits}).$$
-You do **not** hand-code its gradient — build it from `CrossEntropyLoss` (`stage_12`/`stage_32`),
+You do **not** hand-code its gradient — build it from `CrossEntropyLoss` (`stage_13`/`stage_32`),
 so `backward()` (`stage_08`) yields the fused
 $$\frac{\partial\mathcal{L}}{\partial\text{logits}}=\frac{\operatorname{softmax}(\text{logits})-Y}{BL}.$$
 A random model has loss $\approx\ln V$; success means dropping clearly below that.
@@ -29,7 +29,7 @@ softmax, draw a character, append, slide the window to the last $L$ chars, repea
 - [Let's build GPT: from scratch, in code, spelled out (Karpathy)](https://www.youtube.com/watch?v=kCc8FmEb1nY) — the exact thing you are building: char dataset, blocks, training loop, sampling.
 - [Let's reproduce GPT-2 (124M) (Karpathy)](https://www.youtube.com/watch?v=l8pRSuU81PU) — scaling the same recipe; weight tying, init, the training loop in detail.
 
-**Imports & adds** — imports `Tensor` (`stage_08`), `cross_entropy_loss` (`stage_12`),
+**Imports & adds** — imports `Tensor` (`stage_08`), `cross_entropy_loss` (`stage_13`),
 `causal_mask` (`stage_28`), `TransformerBlock`/`LayerNorm` (`stage_30`), and
 `Module`/`Parameter`/`Linear`/`Adam` (`stage_32`) via `dlfs.stage_import`; adds only the tiny
 char-LM (`TransformerLM`) train + sampling script on top.
@@ -55,7 +55,7 @@ own prior stages via `dlfs.stage_import`. **No** PyTorch/TensorFlow/JAX/autograd
     `causal_mask(L)` (`stage_28`) and pass it to every block.
   - `parameters()`: every `Parameter` of embeddings, all blocks, final norm, and head.
 - `lm_loss(logits, targets) -> Tensor`: flatten `(B, L, V) -> (B*L, V)` and `(B, L) -> (B*L,)`,
-  return the scalar mean `cross_entropy_loss` (`stage_12`/`stage_32`).
+  return the scalar mean `cross_entropy_loss` (`stage_13`/`stage_32`).
 - `train_lm(model, data, *, block_size, batch_size, steps, lr, seed=None) -> list[float]`:
   the loop — `get_batch`, `forward`, `lm_loss`, `loss.backward()`, `Adam.step()`,
   `zero_grad()` — appending `float(loss.data)` each step; return the history.

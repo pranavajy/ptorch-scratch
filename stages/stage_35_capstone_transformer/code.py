@@ -14,7 +14,7 @@ import numpy as np
 # Prior-stage building blocks (integration only).
 from dlfs import stage_import
 
-# Tensor (09); mytorch Module/Parameter/Linear/Adam (33); TransformerBlock/LayerNorm (31).
+# Tensor (stage_08 via stage_12); mytorch Module/Parameter/Linear/Adam (stage_32); TransformerBlock/LayerNorm (stage_30).
 Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage32_Module, Stage32_Parameter, Stage32_Linear, Stage32_Adam = stage_import(
     "stage_32", "Module", "Parameter", "Linear", "Adam"

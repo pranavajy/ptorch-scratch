@@ -13,7 +13,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 
-# MultiHeadAttention (30), MLP (12), Tensor (09) -- re-exported for later stages.
+# MultiHeadAttention (stage_29), MLP (stage_11), Tensor (stage_08 via stage_12) -- re-exported for later stages.
 from dlfs import stage_import
 
 Stage29_MultiHeadAttention = stage_import("stage_29", "MultiHeadAttention")

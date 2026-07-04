@@ -14,8 +14,8 @@ and for $v = a \cdot b$, $\frac{\partial v}{\partial a} = b$ and $\frac{\partial
 
 **Exercise** — Extend `Value` from `stage_01` in `code.py` so the graph is walkable. Add nothing that computes gradients yet.
 - The constructor and all arithmetic (`__add__`/`__mul__`/`__pow__` and the derived/reflected ops) are INHERITED from stage_01 and already record `_prev`/`_op`. Do **not** re-implement them.
-- `__repr__(self)`: return `f"Value(data={self.data}, op={self._op!r})"` (surfaces the `_op` label).
-- Provide a free function `trace(root)` that walks `_prev` from `root` and returns `(nodes, edges)`: `nodes` a set of all `Value`s reachable from `root`, `edges` a set of `(parent, child)` tuples. It must not revisit nodes (use a visited set) so it terminates even though the graph is a DAG.
+- `__repr__(self)`: return a repr that includes `data=<x>` and `op=<op>` (e.g. `Value(data=3.0, op='+')`) — exact formatting is free; the tests only check that `data=` and `op=` appear (surfaces the `_op` label).
+- Provide a free function `trace(root)` that walks `_prev` from `root` and returns `(nodes, edges)`: `nodes` a set of all `Value`s reachable from `root`, `edges` a set of `(parent, child)` tuples, where the parent is the operand/input and the child is the result built from it. It must not revisit nodes (use a visited set) so it terminates even though the graph is a DAG.
 - Forward values and graph metadata are exactly as stage 01 produces them; this stage only adds the ability to *read* the graph.
 - Allowed tools: Python stdlib only. No NumPy needed here; no autodiff libraries.
 

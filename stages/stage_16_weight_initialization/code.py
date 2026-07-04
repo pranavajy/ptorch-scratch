@@ -1,25 +1,26 @@
-"""Stage 15: Weight initialization.
+"""Stage 16: Weight initialization.
 
 Turns the variance-propagation rule Var(z) = n_in * Var(W) * Var(x) into the
-Xavier/Glorot (tanh/linear) and He/Kaiming (relu) schemes plus a harness that
-measures activation statistics across depth. Imports Dense (stage_11) and Tensor
-(stage_12) as-is; builds samplers and a measurement harness on top.
+Xavier/Glorot (tanh/linear) and He/Kaiming (relu) schemes, plus `init_dense`
+(apply an init to a Dense in place) and the `forward_activation_stats` harness
+that measures activation statistics across depth. Imports Dense (stage_10) and
+Tensor (stage_08) as-is; nothing is redefined.
 """
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional, Sequence
 
 import numpy as np
 
-# Dense (stage_11) and Tensor (stage_12) via the shared dlfs shim, used as-is.
+# Dense (stage_10) and Tensor (stage_08) via the shared dlfs shim, used as-is.
 from dlfs import stage_import
 
-Stage11_Dense = stage_import("stage_11", "Dense")
-Stage12_Tensor = stage_import("stage_12", "Tensor")
+Stage10_Dense = stage_import("stage_10", "Dense")
+Stage8_Tensor = stage_import("stage_08", "Tensor")
 
-Dense = Stage11_Dense
-Tensor = Stage12_Tensor
+Dense = Stage10_Dense
+Tensor = Stage8_Tensor
 
 
 def xavier_uniform(
@@ -48,3 +49,47 @@ def he_uniform(n_in: int, n_out: int, *, seed: Optional[int] = None) -> np.ndarr
     """He/Kaiming uniform init for ReLU nets: U[-a, a], a = sqrt(6/n_in). Returns (n_in, n_out)."""
     # TODO: sample U[-a, a] so Var(W) = 2 / n_in.
     raise NotImplementedError("he_uniform")
+
+
+def init_dense(layer, W: np.ndarray, b: Optional[np.ndarray] = None) -> None:
+    """Overwrite a stage_10 ``Dense`` layer's weights IN PLACE with `W` (and `b`).
+
+    Keep ``layer.W`` (and ``layer.b``) the SAME leaf ``Tensor`` objects — only
+    their ``.data`` is replaced — so any optimizer/graph reference keeps
+    accumulating into the same ``.grad`` buffers. Reset those ``.grad``s to
+    zeros of the new shape. Raise ``ValueError`` on any shape mismatch.
+    """
+    # TODO: validate shapes; overwrite layer.W.data (and layer.b.data if given);
+    #       reset the matching .grad buffers to zeros. Never rebind layer.W/layer.b.
+    raise NotImplementedError("init_dense")
+
+
+def forward_activation_stats(
+    sizes: Sequence[int],
+    init_fn: Callable[[int, int], np.ndarray],
+    activation: str,
+    *,
+    n_samples: int = 512,
+    seed: Optional[int] = None,
+) -> List[Dict[str, float]]:
+    """Push N(0,1) inputs through a freshly initialized Dense stack; record stats.
+
+    Build ``len(sizes)-1`` stage_10 ``Dense`` layers (layer k maps
+    ``sizes[k] -> sizes[k+1]``), init each weight with ``init_fn(n_in, n_out)``
+    and zero bias (via ``init_dense``), then push ``n_samples`` standard-normal
+    rows through the stack, applying ``activation`` ("tanh" / "relu" / "none")
+    after every layer. Return one dict per layer with keys:
+
+      - "mean":      mean of that layer's post-activation output
+      - "std":       std of that layer's post-activation output
+      - "saturated": fraction with |value| > 0.98 (tanh saturation measure)
+      - "dead":      fraction exactly 0.0 (dead-ReLU measure)
+
+    This is the measurement harness that shows WHY the variance-matched inits
+    matter: matched init keeps "std" stable across depth; a tiny init collapses
+    it toward 0; a large one saturates tanh / kills ReLUs.
+    """
+    # TODO: build + init the stack, run the forward pass layer by layer
+    #       (activation applied on the Tensor output), and collect the stats
+    #       from each layer's post-activation .data.
+    raise NotImplementedError("forward_activation_stats")

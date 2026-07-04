@@ -1,4 +1,4 @@
-"""Tests for Stage 20: L1 & L2 regularization.
+"""Tests for Stage 21: L1 & L2 regularization.
 
 The penalties are differentiable ``Tensor`` functions, so we gradcheck them with
 central differences: for a scalar penalty ``R`` and a weight ``Tensor`` ``w``,
@@ -8,12 +8,12 @@ central differences: for a scalar penalty ``R`` and a weight ``Tensor`` ``w``,
 and compare against the analytic gradient that ``Tensor.backward()`` deposits in
 ``w.grad`` (== ``lam * w`` for L2, ``lam * sign(w)`` for L1). We also assert the
 forward values match NumPy references and that the L2 penalty gradient equals the
-``stage_17`` coupled ``weight_decay`` term ``lam * p.data``.
+``stage_18`` coupled ``weight_decay`` term ``lam * p.data``.
 
-If stage_20's (or stage_08's) ``code.py`` is not implemented yet, the suite skips
+If stage_21's (or stage_08's) ``code.py`` is not implemented yet, the suite skips
 cleanly.
 
-Run with:  pytest stage_20_regularization/test.py
+Run with:  pytest stage_21_regularization/test.py
 """
 import os as _os
 import sys as _sys
@@ -49,7 +49,7 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_20 regularization not importable yet: {exc}",
+        f"stage_21 regularization not importable yet: {exc}",
         allow_module_level=True,
     )
 
@@ -63,7 +63,7 @@ def _maybe_skip(thunk):
     try:
         return thunk()
     except NotImplementedError as exc:  # pragma: no cover
-        pytest.skip(f"stage_20 piece not implemented yet: {exc}")
+        pytest.skip(f"stage_21 piece not implemented yet: {exc}")
 
 
 def central_diff_penalty(penalty_fn, w_array, lam):
@@ -202,10 +202,10 @@ def test_multi_param_grads():
 
 
 # ===========================================================================
-# Equivalence with stage_17 coupled weight decay
+# Equivalence with stage_18 coupled weight decay
 # ===========================================================================
 def test_l2_grad_matches_weight_decay_helper():
-    """l2_grad_equals_weight_decay returns lam*p.data == stage_17 wd term."""
+    """l2_grad_equals_weight_decay returns lam*p.data == stage_18 wd term."""
     wa = np.array([1.0, -2.0, 3.0])
     wb = np.array([[0.5], [-1.5]])
     lam = 0.3

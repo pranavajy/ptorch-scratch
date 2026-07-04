@@ -1,4 +1,4 @@
-"""Stage 22: Batch Normalization (1-D).
+"""Stage 23: Batch Normalization (1-D).
 
 Self-contained module with hand-written forward/backward on raw NumPy arrays (not
 the Tensor engine). Per feature: x_hat=(x-mu)/sqrt(var+eps); y=gamma*x_hat+beta.
@@ -11,7 +11,7 @@ from typing import List
 
 import numpy as np
 
-# Tensor (09), imported for shape/parity use.
+# Tensor (stage_08 engine via stage_12), imported for shape/parity use.
 from dlfs import stage_import
 
 Stage12_Tensor = stage_import("stage_12", "Tensor")
@@ -30,9 +30,10 @@ class BatchNorm1d:
         # TODO: init params (gamma ones/beta zeros), buffers, grads, training flag, cache.
         raise NotImplementedError("BatchNorm1d.__init__")
 
-    def train(self) -> "BatchNorm1d":
-        """Switch to train mode (batch stats, update buffers); return self."""
-        # TODO: set training True and return self.
+    def train(self, mode: bool = True) -> "BatchNorm1d":
+        """Set ``self.training = mode`` (True -> batch stats, update buffers);
+        return self."""
+        # TODO: set self.training = mode and return self.
         raise NotImplementedError("BatchNorm1d.train")
 
     def eval(self) -> "BatchNorm1d":

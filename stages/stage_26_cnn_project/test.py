@@ -14,8 +14,8 @@ Verifies the composed convolutional classifier built on the prior stages:
   * ``train_cnn`` drives training loss down and reaches high train accuracy on a
     tiny synthetic 2-class digit set.
 
-This stage depends on stage_08 (Tensor), stage_10 (Dense), stage_12
-(cross_entropy_loss), stage_18 (Adam), stage_20 (DataLoader/Dataset) and
+This stage depends on stage_11 (Dense), stage_13 (cross_entropy_loss),
+stage_18 (Adam), stage_20 (DataLoader/Dataset) and
 stage_25 (Conv2D/MaxPool2D/Flatten). If any of those is not implemented yet, the
 suite skips cleanly instead of erroring.
 
@@ -61,7 +61,7 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_26 CNN or a prior dependency (stage_08/11/14/19/21/26) "
+        f"stage_26 CNN or a prior dependency (stage_11/13/18/20/25) "
         f"not importable yet: {exc}",
         allow_module_level=True,
     )

@@ -13,7 +13,7 @@ import numpy as np
 
 from dlfs import stage_import
 
-# Tensor (09); SelfAttention/causal_mask (29) -- the head composed h times.
+# Tensor (stage_08 via stage_12); SelfAttention/causal_mask (stage_28) -- the head composed h times.
 Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage28_SelfAttention, Stage28_causal_mask = stage_import(
     "stage_28", "SelfAttention", "causal_mask"

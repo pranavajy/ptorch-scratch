@@ -15,7 +15,7 @@ Stages 01-05 together reimplement Andrej Karpathy's [micrograd](https://github.c
 **Exercise** — In `code.py`, complete the `Value` subclass. You may use ONLY Python stdlib (NumPy/Matplotlib allowed but unnecessary here; NO autodiff libs).
 - ADD these new ops, each returning a `Value` whose `_backward` accumulates into inputs with `+=`:
   - `tanh(self)`, `exp(self)`, `relu(self)`.
-- Thin `__add__`/`__mul__`/`__pow__` overrides: delegate to `super()` (stage_04's math, which already installs the gradient closures) and only re-bless the result as a stage-06 `Value` so the new unary ops chain on intermediates — do NOT re-derive gradients.
+- No `__add__`/`__mul__`/`__pow__` overrides needed: stage_01's `_make` builds every result via `type(self)(...)`, so the inherited operators already return this stage's `Value` and the new unary ops chain on any intermediate (e.g. `(a + b).tanh()`) — do NOT re-derive or re-wrap them.
 - `__repr__`: e.g. `Value(data=2.0, grad=4.0)`.
 - Acceptance: every new `_backward` uses `+=` (never `=`); reused nodes (like `a` in the canonical example) get summed gradients.
 

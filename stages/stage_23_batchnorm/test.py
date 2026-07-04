@@ -1,4 +1,4 @@
-"""Stage 22 tests: Batch Normalization (1-D).
+"""Stage 23 tests: Batch Normalization (1-D).
 
 Covers:
   * forward standardization (mean ~ 0, var ~ 1) and the gamma/beta affine,
@@ -26,7 +26,7 @@ sys.path.insert(0, _ROOT)
 
 # --------------------------------------------------------------------------- #
 # Import BatchNorm1d from this stage's code.py. code.py pulls Tensor from
-# stage_08 via dlfs.stage_import; importing it here runs that import (it must
+# stage_12 via dlfs.stage_import; importing it here runs that import (it must
 # succeed even while the BatchNorm1d bodies are still skeletons).
 # --------------------------------------------------------------------------- #
 try:
@@ -45,7 +45,7 @@ try:
     from code import BatchNorm1d
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_22 BatchNorm1d / stage_08 Tensor not importable yet: {exc}",
+        f"stage_23 BatchNorm1d / stage_08 Tensor not importable yet: {exc}",
         allow_module_level=True,
     )
 

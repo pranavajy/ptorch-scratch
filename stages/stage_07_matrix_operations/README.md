@@ -38,11 +38,12 @@ for gradients). No autodiff libraries.
 - `class Mat`:
   - `Mat(data)` where `data` is a 2-D iterable of `float`/`int`/`Value`; store `self.data` as a
     `List[List[Value]]` (wrap non-`Value` entries; keep existing `Value`s as-is). Set `self.rows`,
-    `self.cols`; expose `self.shape == (rows, cols)`. Unequal row lengths raise `ValueError`.
+    `self.cols`; expose `self.shape == (rows, cols)`. Unequal row lengths raise `AssertionError`
+    (a bare `assert`).
     `M[i]` returns a row (list of `Value`), so `M[i][j]` is an element; iteration yields rows.
   - `matmul(self, other) -> Mat` and `__matmul__` (the `@` operator): forward
     `C[i][j] = sum_p self[i][p] * other[p][j]`, built from `Value` `*`/`+`. Shape `(m,k)@(k,n)->(m,n)`.
-    Inner-dim mismatch (`self.cols != other.rows`) raises `ValueError` reporting both shapes.
+    Inner-dim mismatch (`self.cols != other.rows`) raises `AssertionError` (a bare `assert`).
   - `transpose(self) -> Mat` and the `T` property: `C[j][i] = self[i][j]`, reusing the same `Value`s.
   - `reshape(self, rows, cols) -> Mat`: row-major flatten then regroup, reusing the same `Value`s;
     size mismatch raises `ValueError`.
@@ -57,4 +58,4 @@ for gradients). No autodiff libraries.
 **Done when**
 - `pytest stage_07_matrix_operations/test.py` passes.
 - Matmul/transpose/reshape/sum/mean forward-compute correctly; `dL/dA = G@B.T`, `dL/dB = A.T@G` verified.
-- Analytical grads match central-difference gradcheck within `1e-5`; inner-dim mismatch raises `ValueError`.
+- Analytical grads match central-difference gradcheck within `1e-5`; inner-dim mismatch raises `AssertionError`.

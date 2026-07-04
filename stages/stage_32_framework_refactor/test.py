@@ -1,4 +1,4 @@
-"""Tests for Stage 31: Framework refactor (``mytorch``).
+"""Tests for Stage 32: Framework refactor (``mytorch``).
 
 This stage introduces no new math, so the testing has two halves:
 
@@ -19,7 +19,7 @@ This stage introduces no new math, so the testing has two halves:
 If a prior stage (Tensor / Dense / losses / optimizers / DataLoader) or this
 stage's framework is not implemented yet, the suite SKIPS cleanly.
 
-Run with:  pytest stage_31_framework_refactor/test.py
+Run with:  pytest stage_32_framework_refactor/test.py
 """
 import os as _os
 import sys as _sys
@@ -66,7 +66,7 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_31 mytorch / a prior stage not importable yet: {exc}",
+        f"stage_32 mytorch / a prior stage not importable yet: {exc}",
         allow_module_level=True,
     )
 

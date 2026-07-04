@@ -1,4 +1,4 @@
-"""Tests for Stage 26: Attention mathematics.
+"""Tests for Stage 27: Attention mathematics.
 
 Checks the scaled dot-product attention forward against a naive per-query loop
 reference, verifies softmax stability and the row-sum property, and gradient-
@@ -11,7 +11,7 @@ difference checks differentiate; the analytic gradients come from
 ``attention_backward``. If the stage is not implemented yet the suite skips
 cleanly instead of erroring.
 
-Run with:  pytest stage_26_attention_math/test.py
+Run with:  pytest stage_27_attention_math/test.py
 """
 import os as _os
 import sys as _sys
@@ -46,7 +46,7 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_26 attention math not importable yet: {exc}",
+        f"stage_27 attention math not importable yet: {exc}",
         allow_module_level=True,
     )
 

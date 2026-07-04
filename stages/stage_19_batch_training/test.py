@@ -1,6 +1,6 @@
-"""Tests for Stage 18: Mini-batch training.
+"""Tests for Stage 19: Mini-batch training.
 
-These tests verify the data-feeding layer on top of the stage_14 training stack
+These tests verify the data-feeding layer on top of the stage_15 training stack
 (``MLP``, ``mse_loss``, ``SGD``, ``make_moons``) and the stage_08 ``Tensor``:
 
   * ``iterate_minibatches`` partitions the dataset exactly (covers every row
@@ -19,7 +19,7 @@ These tests verify the data-feeding layer on top of the stage_14 training stack
 If stage_08 / stage_14 / this stage are not implemented yet, the suite skips
 cleanly instead of erroring, so you can run it incrementally.
 
-Run with:  pytest stage_18_batch_training/test.py
+Run with:  pytest stage_19_batch_training/test.py
 """
 import os as _os
 import sys as _sys
@@ -67,7 +67,7 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_18 / stage_14 / stage_08 not importable yet: {exc}",
+        f"stage_19 / stage_15 / stage_14 not importable yet: {exc}",
         allow_module_level=True,
     )
 
@@ -212,7 +212,7 @@ def test_epoch_loss_decreases():
 
 def test_full_batch_matches_manual_loop():
     """batch_size == N with shuffle=False must equal a hand-rolled full-batch
-    loop on the SAME initial model -- i.e. mini-batch reduces to stage_14."""
+    loop on the SAME initial model -- i.e. mini-batch reduces to stage_15."""
     X, y = toy_data(n=24, seed=2)
 
     # Model A: trained via train_minibatch in full-batch mode.
@@ -221,7 +221,7 @@ def test_full_batch_matches_manual_loop():
         model_a, X, y, lr=0.1, epochs=10, batch_size=len(X), shuffle=False
     )
 
-    # Model B: identical init, manual full-batch loop using the stage_14 stack.
+    # Model B: identical init, manual full-batch loop using the stage_15 stack.
     model_b = MLP([2, 8, 1], activation="tanh", seed=3)
     opt = SGD(model_b.parameters(), 0.1)
     manual = []

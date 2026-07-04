@@ -35,6 +35,8 @@ class PatchEmbed:
 
     Splits images into non-overlapping P x P patches via im2col (stride P, pad 0)
     and projects each flattened C*P*P patch with a learned linear map E (+ bias b).
+    (Note: stage_25's im2col returns (cols, x_padded_shape) -- unpack the tuple
+    and keep x_padded_shape in the cache; col2im needs it.)
     """
 
     def __init__(
@@ -49,7 +51,7 @@ class PatchEmbed:
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """(N, C, H, W) -> (N, Np, d_model); patches ordered as im2col rows. Caches for backward."""
-        # TODO: im2col -> cols @ E + b -> reshape (N, Np, D); cache and return.
+        # TODO: im2col (returns a (cols, x_padded_shape) tuple) -> cols @ E + b -> reshape (N, Np, D); cache and return.
         raise NotImplementedError("PatchEmbed.forward")
 
     def __call__(self, x: np.ndarray) -> np.ndarray:

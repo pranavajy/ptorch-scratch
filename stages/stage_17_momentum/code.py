@@ -10,7 +10,7 @@ from typing import Iterable
 
 import numpy as np
 
-# Tensor (09), SGD (15).
+# Tensor (stage_08 engine via stage_12); SGD (stage_14).
 from dlfs import stage_import
 
 Stage12_Tensor = stage_import("stage_12", "Tensor")

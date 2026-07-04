@@ -1,6 +1,6 @@
-"""Tests for Stage 28: Multi-Head Attention.
+"""Tests for Stage 29: Multi-Head Attention.
 
-MHA is built ON stage_27's single-head ``SelfAttention`` plus a learned output
+MHA is built ON stage_28's single-head ``SelfAttention`` plus a learned output
 projection ``W_o``; every gradient flows through ``Tensor.backward()`` (stage_08),
 so we gradient-check a scalar loss against central differences:
 
@@ -9,11 +9,11 @@ so we gradient-check a scalar loss against central differences:
 We check forward shape, that ``h=1`` reduces to one ``SelfAttention`` head
 followed by ``W_o``, that a bad head count raises ``ValueError``, and that the
 analytic gradients for ``W_o``, each head's ``W_q/W_k/W_v``, and the input ``x``
-match the numerical ones. If stage_08's ``Tensor`` / stage_27's ``SelfAttention``
+match the numerical ones. If stage_08's ``Tensor`` / stage_28's ``SelfAttention``
 or this stage's ``MultiHeadAttention`` is not implemented yet, the suite skips
 cleanly instead of erroring.
 
-Run with:  pytest stage_28_multi_head_attention/test.py
+Run with:  pytest stage_29_multi_head_attention/test.py
 """
 import os as _os
 import sys as _sys
@@ -43,7 +43,7 @@ try:
     from code import MHA, MultiHeadAttention, SelfAttention, Tensor
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_28 MHA / stage_27 SelfAttention / stage_08 Tensor not "
+        f"stage_29 MHA / stage_28 SelfAttention / stage_08 Tensor not "
         f"importable yet: {exc}",
         allow_module_level=True,
     )
@@ -104,7 +104,7 @@ def test_holds_h_self_attention_heads():
     mha = make_mha(d_model=12, h=4, seed=1)
     assert len(mha.heads) == 4, "must build one head per h"
     assert all(isinstance(hd, SelfAttention) for hd in mha.heads), (
-        "MHA must reuse stage_27 SelfAttention heads (not reimplement attention)"
+        "MHA must reuse stage_28 SelfAttention heads (not reimplement attention)"
     )
     assert mha.d_k == 3, "d_k must be d_model // h"
 

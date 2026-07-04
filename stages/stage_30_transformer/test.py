@@ -1,15 +1,15 @@
-"""Stage 29 tests: Transformer block.
+"""Stage 30 tests: Transformer block.
 
 Covers:
   * LayerNorm forward: per-token standardization over the FEATURE axis (mean ~0,
     var ~1 per token) and the gamma/beta affine,
   * LayerNorm hand-derived backward via central-difference gradcheck w.r.t. x,
     gamma, and beta (reduction over the last axis, the per-token analogue of the
-    per-feature BatchNorm backward in stage_22),
+    per-feature BatchNorm backward in stage_23),
   * the TransformerBlock wiring: shape preservation, pre- vs post-norm difference,
     and the residual identity when the sublayers contribute nothing.
 
-The TransformerBlock tests depend on MultiHeadAttention (stage_28) and MLP
+The TransformerBlock tests depend on MultiHeadAttention (stage_29) and MLP
 (stage_11); they SKIP cleanly if those stages are not yet implemented, while the
 LayerNorm gradchecks always run.
 
@@ -36,7 +36,7 @@ if _ROOT not in _sys.path:
 
 # --------------------------------------------------------------------------- #
 # Load this stage's code.py by file path. code.py pulls MultiHeadAttention
-# (stage_28), MLP (stage_11), and Tensor (stage_08) through dlfs.stage_import;
+# (stage_29), MLP (stage_11), and Tensor (stage_08) through dlfs.stage_import;
 # loading it here runs those imports (which must succeed while the LayerNorm /
 # TransformerBlock bodies are still skeletons). The LayerNorm gradchecks always
 # run; the TransformerBlock tests skip cleanly if a dependency body is not yet
@@ -305,7 +305,7 @@ def test_zero_grad_resets_param_grads():
 
 
 # --------------------------------------------------------------------------- #
-# TransformerBlock wiring. These need MHA (stage_28) and MLP (stage_11); skip
+# TransformerBlock wiring. These need MHA (stage_29) and MLP (stage_11); skip
 # cleanly if those dependencies are not yet implemented.
 # --------------------------------------------------------------------------- #
 def _build_block(**kwargs):

@@ -18,9 +18,9 @@ Verifies the CIFAR-10 capstone built on the prior stages:
   * ``train_cifar`` drives loss down and reaches high train accuracy on a tiny
     synthetic CIFAR-like set, recording the per-step learning rate.
 
-Depends on stage_08 (Tensor), stage_10 (Dense), stage_25 (Conv2D/MaxPool2D/
+Depends on stage_08 (Tensor), stage_11 (Dense), stage_25 (Conv2D/MaxPool2D/
 Flatten), and the stage_32 mytorch API (cross_entropy_loss / Adam / DataLoader /
-Dataset, re-exporting stages 14 / 19 / 21). If any is not implemented yet, the
+Dataset, re-exporting stages 14/18/20 via stage_32). If any is not implemented yet, the
 suite skips cleanly.
 
 Run with:  pytest stage_34_capstone_cifar10/test.py
@@ -70,7 +70,7 @@ try:
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
         f"stage_34 capstone or a prior dependency "
-        f"(stage_08/11/14/19/21/26/27) not importable yet: {exc}",
+        f"(stage_11/12/13/18/20/25/32) not importable yet: {exc}",
         allow_module_level=True,
     )
 

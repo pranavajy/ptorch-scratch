@@ -11,7 +11,7 @@ zero help from PyTorch. The classifier is a plain `Sequential(Linear, ReLU, Line
 **Background** — MNIST is 70k grayscale `28x28` digit images (60k train / 10k test), labels `0..9`.
 An image is a point $x\in\mathbb{R}^{784}$ (flattened) fed to the MLP, which outputs logits
 $z\in\mathbb{R}^{10}$ and minimizes the mean softmax cross-entropy (the `stage_32` `CrossEntropyLoss`,
-wrapping `stage_12`), $L=-\frac1B\sum_b \log p_{b,y_b}$ with $p=\mathrm{softmax}(z)$. The only
+wrapping `stage_13`), $L=-\frac1B\sum_b \log p_{b,y_b}$ with $p=\mathrm{softmax}(z)$. The only
 equation that matters here is the one fused gradient your engine already produces,
 $$\frac{\partial L}{\partial z}=\frac{1}{B}\big(\mathrm{softmax}(z)-Y\big),\qquad Y=\text{one-hot}(y),$$
 and it flows back through every `Linear`/`ReLU` via a single `loss.backward()`. **Preprocessing** is the
@@ -27,7 +27,7 @@ well-scaled and let the initialization train stably. No autodiff library, no `to
 **Exercise** — Implement, in `code.py`, an MNIST loader and a capstone training script that reaches a
 target test accuracy using ONLY the `stage_32` framework. Pull the whole `mytorch` API
 (`Module`/`Sequential`/`Linear`/`ReLU`/`CrossEntropyLoss`/`Adam`/`DataLoader`/`Dataset`/`Tensor`) from
-`stage_32` via `dlfs.stage_import`, and expose `cross_entropy_loss` as a `CrossEntropyLoss()` instance.
+`stage_32` via `dlfs.stage_import`, and expose `cross_entropy_loss` as a module-level function that applies a shared `CrossEntropyLoss()` instance.
 Define `accuracy` locally. Allowed tools: `numpy` (array math + byte parsing), `matplotlib` (optional
 curves), the stdlib (`gzip`, `struct`, `os`), and the `stage_32` framework. **No PyTorch / TensorFlow /
 JAX / autograd / torchvision / sklearn.** No hand-written layer gradients — every backward comes from the
@@ -38,7 +38,7 @@ imported `stage_32` layers.
   return `X` of shape `(N, 28, 28)` `uint8`→`float64` and `y` of shape `(N,)` `int`.
 - `preprocess(X, *, flatten, normalize=True) -> np.ndarray`: divide by 255 when `normalize`; if `flatten`
   return `(N, 784)`, else return channels-first `(N, 1, 28, 28)`. Pure NumPy, no copy of label data.
-- `make_loaders(X, y, *, batch_size, val_frac=0.0, flatten, seed=None) -> (train_loader, val_loader)`:
+- `make_loaders(X, y, *, batch_size, flatten, val_frac=0.0, seed=None) -> (train_loader, val_loader)`:
   `preprocess`, optional NumPy validation split, wrap each split in a `Dataset`+`DataLoader` (`stage_32`).
   `val_loader` is `None` when `val_frac == 0`. Labels stay integer (cross-entropy expects indices). Train
   loader shuffles; val loader does not.

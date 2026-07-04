@@ -11,7 +11,7 @@ differences:
 
 compared against the analytic gradient produced by ``Tensor.backward()`` from
 stage_08. The losses live in this stage's ``code.py`` and are built on the
-``Tensor`` imported from stage_08 through ``dlfs.stage_import``. If stage_08's
+``Tensor`` imported from stage_11 through ``dlfs.stage_import``. If stage_11's
 ``Tensor`` or this stage's losses are not implemented yet, the suite skips
 cleanly instead of erroring.
 
@@ -33,7 +33,7 @@ sys.path.insert(0, _HERE)
 sys.path.insert(0, _ROOT)
 
 # --- Import the things under test, skipping cleanly if not ready yet. --------
-# `code.py` re-exports `Tensor` (from stage_08 via dlfs.stage_import) and defines
+# `code.py` re-exports `Tensor` (from stage_11 via dlfs.stage_import) and defines
 # this stage's loss functions on top of it.
 try:
     # --- resolve sibling code.py (avoid stdlib `code` collision) ---
@@ -58,7 +58,7 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_12 losses / stage_08 Tensor not importable yet: {exc}",
+        f"stage_12 losses / stage_11 Tensor not importable yet: {exc}",
         allow_module_level=True,
     )
 
@@ -154,6 +154,35 @@ def test_mean_axis_keepdims_forward():
     m = x.mean(axis=1, keepdims=True)
     assert as_array(m).shape == (2, 1), f"mean(axis=1, keepdims) shape: {as_array(m).shape}"
     assert np.allclose(as_array(m), [[2.0], [5.0]]), f"values: {as_array(m)}"
+
+
+def test_sum_axis1_no_keepdims_backward():
+    # keepdims=False drops the reduced axis: (B, C) -> (B,). The backward must
+    # restore that axis before broadcasting the grad back — `grad += out.grad`
+    # without re-expanding either crashes or adds along the WRONG axis. This is
+    # the exact path stage_13's batched cross-entropy takes: .sum(axis=1).mean().
+    x = Tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])  # (2, 3): axis sizes differ on purpose
+    s = x.sum(axis=1)
+    assert as_array(s).shape == (2,), f"sum(axis=1) shape: {as_array(s).shape}"
+    assert np.allclose(as_array(s), [6.0, 15.0]), f"sum(axis=1) values: {as_array(s)}"
+    s.mean().backward()  # d/dx of mean over rows of row-sums = 1/2 everywhere
+    g = as_array(x.grad)
+    assert g.shape == (2, 3), f"grad shape: {g.shape}"
+    assert np.allclose(g, np.full((2, 3), 0.5)), (
+        f"sum(axis=1) grad must re-expand the dropped axis, got\n{g}"
+    )
+
+
+def test_mean_axis1_no_keepdims_backward():
+    x = Tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])  # (2, 3)
+    m = x.mean(axis=1)
+    assert as_array(m).shape == (2,), f"mean(axis=1) shape: {as_array(m).shape}"
+    m.sum().backward()  # each entry contributes 1/3 to its row mean
+    g = as_array(x.grad)
+    assert g.shape == (2, 3), f"grad shape: {g.shape}"
+    assert np.allclose(g, np.full((2, 3), 1.0 / 3.0)), (
+        f"mean(axis=1) grad should be 1/3 everywhere, got\n{g}"
+    )
 
 
 def test_sum_gradcheck_against_central_diff():

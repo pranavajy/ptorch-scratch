@@ -1,4 +1,4 @@
-"""Stage 13: SGD optimizer.
+"""Stage 14: SGD optimizer.
 
 Factors the manual parameter-update ritual into a reusable ``Optimizer`` object
 matching the ``torch.optim`` interface. No new gradient to derive here.
@@ -10,7 +10,8 @@ from typing import Iterable, List
 
 import numpy as np
 
-# Tensor engine from stage_12 (optimizer only reads .grad / writes .data).
+# Tensor (stage_08 engine, imported via its latest extension in stage_12); the
+# optimizer only reads .grad / writes .data.
 from dlfs import stage_import
 
 Stage12_Tensor = stage_import("stage_12", "Tensor")

@@ -1,7 +1,7 @@
-"""Tests for Stage 21: Dropout.
+"""Tests for Stage 22: Dropout.
 
-Covers inverted dropout on top of the ``Tensor`` from stage_08 and the ``MLP``
-from stage_11:
+Covers inverted dropout on top of the ``Tensor`` (stage_08 engine via stage_12)
+and the ``MLP`` from stage_11:
 
   * eval mode is the exact identity (no sampling, no scaling, deterministic);
   * train mode zeroes a ~``1 - p_keep`` fraction of elements and scales the
@@ -17,7 +17,7 @@ layer's RNG to the same value before every forward call, so the SAME Bernoulli
 mask is drawn each time (the analytic backward then matches the numeric slope).
 
 If an earlier stage is not yet implemented, the suite skips rather than
-erroring. Run with:  pytest stage_21_dropout/test.py
+erroring. Run with:  pytest stage_22_dropout/test.py
 """
 import os as _os
 import sys as _sys
@@ -47,7 +47,7 @@ try:
     from code import Dropout, MLPDropout, Tensor
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_21 Dropout / stage_11 MLP / stage_08 Tensor not importable yet: {exc}",
+        f"stage_22 Dropout / stage_11 MLP / stage_08 Tensor not importable yet: {exc}",
         allow_module_level=True,
     )
 

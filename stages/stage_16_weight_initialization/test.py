@@ -1,4 +1,4 @@
-"""Tests for Stage 15: Weight initialization.
+"""Tests for Stage 16: Weight initialization.
 
 What these tests check:
   * Each initializer returns the right shape and an EMPIRICAL variance that
@@ -19,7 +19,7 @@ What these tests check:
 Tests that need the (skeleton) ``Dense`` / ``Tensor`` from sibling stages skip
 cleanly until those are implemented, so this suite is runnable incrementally.
 
-Run with:  pytest stage_15_weight_initialization/test.py
+Run with:  pytest stage_16_weight_initialization/test.py
 """
 import os as _os
 import sys as _sys
@@ -64,7 +64,7 @@ try:
     )
 except (ImportError, NotImplementedError) as exc:  # pragma: no cover
     pytest.skip(
-        f"stage_15 initializers (or stage_10/stage_08 deps) not importable yet: {exc}",
+        f"stage_16 initializers (or stage_10/stage_08 deps) not importable yet: {exc}",
         allow_module_level=True,
     )
 

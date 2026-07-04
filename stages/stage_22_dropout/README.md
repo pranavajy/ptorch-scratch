@@ -1,6 +1,6 @@
 # Stage 22: Dropout
 
-**Context** — A regularizer that fights overfitting by randomly *dropping* units during training, forcing the network to spread its representation across many features instead of co-adapting a few. This is the second train/eval-mode layer in the curriculum, after the normalization layer in `stage_21`: like it, `Dropout` behaves differently in `train` vs `eval` mode and plugs into the `MLP` from `stage_11` between its `Dense` layers. You build it on the autodiff `Tensor` from `stage_08`, so backprop through the mask is automatic.
+**Context** — A regularizer that fights overfitting by randomly *dropping* units during training, forcing the network to spread its representation across many features instead of co-adapting a few. This is the first train/eval-mode layer in the curriculum; BatchNorm (`stage_23`) follows the same convention. `Dropout` behaves differently in `train` vs `eval` mode and plugs into the `MLP` from `stage_11` between its `Dense` layers. You build it on the autodiff `Tensor` from `stage_08`, so backprop through the mask is automatic.
 
 **Background** — Standard ("inverted") dropout, with keep probability $p$ (drop probability $1-p$): at **training** time, sample a per-element Bernoulli mask $m_{ij}\sim\mathrm{Bernoulli}(p)$, then output
 $$y = \frac{m \odot x}{p},$$
@@ -12,7 +12,7 @@ i.e. dropped units ($m_{ij}=0$) get zero gradient and kept units get their incom
 - [Dropout explained (DeepLearningAI / Andrew Ng)](https://www.youtube.com/watch?v=ARq74QuavAo) — what dropout does and why inverted scaling keeps test-time activations consistent.
 - [Regularization in a neural network (StatQuest)](https://www.youtube.com/watch?v=6g0t3Phly2M) — the overfitting / co-adaptation intuition dropout is fighting.
 
-**Cumulative** — imports `Tensor` (`stage_08`) and `MLP` (`stage_11`) via `dlfs.stage_import`; ADDS a new `Dropout` (inverted, train/eval mask) on top of `Tensor`, and `MLPDropout` which SUBCLASSES `MLP` to drop in a `Dropout` after each hidden layer.
+**Cumulative** — imports `Tensor` (`stage_08`; imported via `stage_12`, its latest extension) and `MLP` (`stage_11`) via `dlfs.stage_import`; ADDS a new `Dropout` (inverted, train/eval mask) on top of `Tensor`, and `MLPDropout` which SUBCLASSES `MLP` to drop in a `Dropout` after each hidden layer.
 
 **Exercise** — Implement inverted dropout in `code.py` on top of the `Tensor` from `stage_08` and `MLP` from `stage_11` (import them with `from dlfs import stage_import`). Allowed tools: `numpy` (mask sampling / forward arrays only), the Python stdlib, and your `stage_08` / `stage_11` code. No PyTorch / autograd.
 

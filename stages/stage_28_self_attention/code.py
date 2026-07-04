@@ -1,6 +1,6 @@
-"""Stage 27: Single-head scaled dot-product self-attention.
+"""Stage 28: Single-head scaled dot-product self-attention.
 
-Built on the stage_12 ``Tensor`` engine. For a sequence X (T, d_model):
+Built on the ``Tensor`` engine (stage_08, imported via stage_12). For a sequence X (T, d_model):
     Q,K,V = X@W_q, X@W_k, X@W_v;  S = (Q@K.T)/sqrt(d_k) (+mask);
     A = softmax_rows(S);  O = A@V.  All via Tensor ops so backward() supplies grads.
 """
@@ -13,7 +13,7 @@ import numpy as np
 
 from dlfs import stage_import
 
-# Tensor (12); softmax/cross_entropy_loss (13, batched).
+# Tensor (stage_08 via stage_12); softmax/cross_entropy_loss (stage_13, batched).
 Stage12_Tensor = stage_import("stage_12", "Tensor")
 Stage13_softmax, Stage13_cross_entropy_loss = stage_import(
     "stage_13", "softmax", "cross_entropy_loss"

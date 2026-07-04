@@ -1,4 +1,4 @@
-"""Tests for stage_24: Conv2D (im2col + matmul) and pooling.
+"""Tests for stage_25: Conv2D (im2col + matmul) and pooling.
 
 Strategy
 --------
@@ -11,7 +11,7 @@ Strategy
   scalar loss L = sum(out), comparing the perturbation estimate to the
   analytic ``.grad`` filled by ``Tensor.backward()``.
 
-Run:  pytest stage_24_conv2d_implementation/test.py
+Run:  pytest stage_25_conv2d_implementation/test.py
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ def _load(prefix: str):
     raise ImportError(f"no code.py under {prefix}*")
 
 
-code = _load("stage_24")
+code = _load("stage_25")
 Tensor = _load("stage_11").Tensor
 
 EPS = 1e-5

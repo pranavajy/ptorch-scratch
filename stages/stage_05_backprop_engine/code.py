@@ -28,30 +28,12 @@ class Value(Stage4_Value):
     This stage only adds the remaining primitive ops and their gradient rules.
     """
 
-    # Re-bless inherited core ops so they return a stage-06 Value (lets the new
-    # unary ops chain on intermediates); delegates math to stage_04.
-
-    def __add__(self, other: Union["Value", Number]) -> "Value":
-        """Return self + other via stage_04's __add__, re-tagged as stage-06 Value."""
-        # TODO: delegate to super().__add__, then re-bless the result's class
-        raise NotImplementedError
-
-    def __mul__(self, other: Union["Value", Number]) -> "Value":
-        """Return self * other via stage_04's __mul__, re-tagged as stage-06 Value."""
-        # TODO: delegate to super().__mul__, then re-bless the result's class
-        raise NotImplementedError
+    # No operator overrides needed: stage_01's `_make` builds every result via
+    # `type(self)(...)`, so the inherited `+`/`*`/`**` already return THIS class
+    # and the new unary ops below chain on any intermediate.
 
     # New primitive ops. Each builds a Value and installs a _backward closure
     # that accumulates into inputs with += (never =).
-
-    def __pow__(self, n: Number) -> "Value":
-        """Return self ** n via stage_04's __pow__, re-tagged as stage-06 Value.
-
-        The forward + ``_backward`` (d/dx = n*x**(n-1)) already live in stage_03;
-        here just delegate to super() and re-bless so results chain as stage-06.
-        """
-        # TODO: delegate to super().__pow__, then re-bless the result's class
-        raise NotImplementedError
 
     def tanh(self) -> "Value":
         """Return tanh(self). Local rule: dt/dx = 1 - tanh(x)**2."""

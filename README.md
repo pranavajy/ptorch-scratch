@@ -10,7 +10,7 @@ The only permitted packages are **NumPy** (forward array math only — never to 
 
 ## How a stage works
 
-Each `stage_xx/` directory contains exactly three files:
+Each `stage_xx/` directory contains three source files:
 
 - **`README.md`** — context, background (intuition + key equations/gradients), watch (videos), and a zero-ambiguity exercise.
 - **`code.py`** — skeleton only: interfaces, signatures, docstrings, and TODOs. No working bodies.
@@ -24,9 +24,11 @@ pytest stage_xx/test.py
 
 Each stage builds on the code from prior stages (e.g. `Value` from `stage_05`, `Tensor` from `stage_08`).
 
+One import convention to know: a later stage pulls a symbol from the **latest** stage that extended it, not from the stage that first created it. `Tensor` is created in `stage_08` but extended in `stage_11` (broadcasting) and `stage_12` (`sum`/`mean` reductions), so stages 13+ do `stage_import("stage_12", "Tensor")`; likewise `Dense` is created in `stage_10` but extended in `stage_11`, so later stages import it from `stage_11`.
+
 ## Solutions
 
-Reference implementations for every stage live on the **`solutions`** branch. Check it out (`git checkout solutions`) only after you've attempted a stage yourself — the whole point is that *you* write every gradient. The `main` branch ships skeletons only.
+Reference implementations live on the **`solutions`** branch (currently solved through stage 17; later stages are being added as the course is finalized). Check it out (`git checkout solutions`) only after you've attempted a stage yourself — the whole point is that *you* write every gradient. The `main` branch ships skeletons only.
 
 ## The 35 stages
 

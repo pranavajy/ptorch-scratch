@@ -1,4 +1,4 @@
-"""Stage 23: Convolution mathematics (shape formulas + forward/backward by hand).
+"""Stage 24: Convolution mathematics (shape formulas + forward/backward by hand).
 
 Pure-function conv math (no autodiff, no layer class): output-size formulas,
 cross-correlation forward, im2col/col2im, and the three backward rules. NCHW
@@ -10,12 +10,6 @@ from __future__ import annotations
 from typing import Tuple
 
 import numpy as np
-
-# Stage_08 Mat / stage_12 Tensor used here only as shape oracles.
-from dlfs import stage_import
-
-Stage7_Mat = stage_import("stage_07", "Mat")
-Stage12_Tensor = stage_import("stage_12", "Tensor")
 
 
 # Output-size formulas

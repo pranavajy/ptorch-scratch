@@ -1,6 +1,6 @@
-"""Stage 23 tests: convolution shape formulas, forward, and gradients.
+"""Stage 24 tests: convolution shape formulas, forward, and gradients.
 
-Run: pytest stage_23_conv2d_math/test.py
+Run: pytest stage_24_conv2d_math/test.py
 
 This stage is math only (no autodiff). We check:
   - the output-size / shape / im2col-shape formulas against a table of cases,

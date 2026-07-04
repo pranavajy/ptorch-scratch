@@ -1,4 +1,4 @@
-"""Stage 20: L1 & L2 regularization.
+"""Stage 21: L1 & L2 regularization.
 
 Adds a weight penalty to the loss: L_tilde = L + lam * R, where
 R2 = 0.5 * sum(theta**2) (grad theta) and R1 = sum(|theta|) (grad sign(theta)).
@@ -66,6 +66,6 @@ def l2_grad_equals_weight_decay(
     params: Iterable, lam: float
 ) -> List[np.ndarray]:
     """Plain-NumPy reference (no autodiff): analytic L2-penalty gradient lam*p.data
-    per param, equal to stage_17's coupled weight_decay term."""
+    per param, equal to stage_18's coupled weight_decay term."""
     # TODO: implement the analytic per-param L2 gradient in NumPy
     raise NotImplementedError("l2_grad_equals_weight_decay")
