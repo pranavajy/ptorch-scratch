@@ -119,7 +119,7 @@ def test_dataset_getitem_index_array_and_slice():
 def test_dataset_length_mismatch_raises():
     X = np.zeros((5, 2))
     y = np.zeros((4,))
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         Dataset(X, y)
 
 
@@ -168,7 +168,7 @@ def test_loader_yields_tensors():
 def test_loader_batch_size_validation():
     X, y = _xy(5)
     ds = _requires(Dataset, X, y)
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         DataLoader(ds, 0)
 
 
@@ -251,9 +251,9 @@ def test_split_deterministic():
 
 def test_split_val_frac_validation():
     X, y = _xy(10)
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         train_val_split(X, y, 1.0)
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         train_val_split(X, y, -0.1)
 
 

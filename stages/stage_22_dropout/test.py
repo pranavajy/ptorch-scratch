@@ -102,7 +102,7 @@ def reseed(layer, seed):
 # --- Construction & validation -----------------------------------------------
 def test_invalid_p_keep_raises():
     for bad in (0.0, -0.1, 1.5, 2.0):
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             Dropout(bad)
 
 

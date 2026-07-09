@@ -128,7 +128,7 @@ def test_num_patches(img, p, expected):
 @pytest.mark.parametrize("img,p", [(8, 3), (10, 4), (7, 2)])
 def test_num_patches_indivisible_raises(img, p):
     try:
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             num_patches(img, p)
     except NotImplementedError as exc:  # pragma: no cover
         pytest.skip(f"not implemented yet: {exc}")

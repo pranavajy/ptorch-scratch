@@ -5,7 +5,7 @@ These tests verify the data-feeding layer on top of the stage_15 training stack
 
   * ``iterate_minibatches`` partitions the dataset exactly (covers every row
     once; correct batch counts; ``drop_last``; ``shuffle`` reproducibility;
-    bad-input ``ValueError``s),
+    bad-input ``AssertionError``s),
   * ``train_minibatch`` runs ``epochs * ceil(N/B)`` steps, drives the epoch loss
     down, and -- with ``batch_size == N`` and ``shuffle=False`` -- reproduces a
     hand-written full-batch loop step-for-step,
@@ -112,7 +112,7 @@ def toy_data(n=40, seed=0, noise=0.1):
     X = np.concatenate([x_out, x_in], axis=0).astype(np.float64)
     y = np.concatenate([np.ones(n_out), -np.ones(n_in)]).astype(np.float64)
     X += rng.normal(0.0, noise, size=X.shape)
-    return X, y
+    return Tensor(X), Tensor(y)
 
 
 # ===========================================================================
@@ -174,12 +174,12 @@ def test_bad_batch_size_raises():
     X = np.zeros((5, 2))
     y = np.zeros(5)
     for bad in (0, -1, 6):
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             list(iterate_minibatches(X, y, batch_size=bad))
 
 
 def test_mismatched_lengths_raise():
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         list(iterate_minibatches(np.zeros((5, 2)), np.zeros(4), batch_size=2))
 
 
@@ -193,7 +193,7 @@ def test_step_count_matches_batches_per_epoch():
     out = train_minibatch(
         model, X, y, lr=0.05, epochs=epochs, batch_size=B, shuffle=True, seed=0
     )
-    n_batches = int(np.ceil(len(X) / B))
+    n_batches = int(np.ceil(X.shape[0] / B))
     assert out["steps"] == epochs * n_batches, "steps == epochs * ceil(N/B)"
     assert len(out["batch_loss"]) == out["steps"], "one batch_loss per step"
     assert len(out["epoch_loss"]) == epochs, "one epoch_loss per epoch"
@@ -218,14 +218,14 @@ def test_full_batch_matches_manual_loop():
     # Model A: trained via train_minibatch in full-batch mode.
     model_a = MLP([2, 8, 1], activation="tanh", seed=3)
     out = train_minibatch(
-        model_a, X, y, lr=0.1, epochs=10, batch_size=len(X), shuffle=False
+        model_a, X, y, lr=0.1, epochs=10, batch_size=X.shape[0], shuffle=False
     )
 
     # Model B: identical init, manual full-batch loop using the stage_15 stack.
     model_b = MLP([2, 8, 1], activation="tanh", seed=3)
     opt = SGD(model_b.parameters(), 0.1)
     manual = []
-    yb = np.asarray(y, dtype=float).reshape(-1, 1)
+    yb = np.asarray(y.data, dtype=float).reshape(-1, 1)
     for _ in range(10):
         pred = model_b(X)
         loss = mse_loss(pred, yb)
@@ -295,14 +295,14 @@ def test_batched_mse_backward_matches_central_diff():
     model.zero_grad() if hasattr(model, "zero_grad") else None
     for q in params:
         q.grad = np.zeros_like(as_array(q))
-    loss = mse_loss(model(X), yb)
+    loss = mse_loss(model(Tensor(X)), yb)
     loss.backward()
     g_analytic = as_array(p.grad)
 
     # Numeric grad: perturb p.data entrywise, recompute the forward loss only.
     def loss_at(p_data):
         p.data = np.asarray(p_data, dtype=float).reshape(p0.shape)
-        out = mse_loss(model(X), yb)
+        out = mse_loss(model(Tensor(X)), yb)
         return float(as_array(out))
 
     g_num = central_diff(loss_at, p0.copy())
