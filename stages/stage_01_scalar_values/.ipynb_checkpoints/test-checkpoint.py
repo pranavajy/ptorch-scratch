@@ -18,13 +18,13 @@ recipe becomes the gradient check against your analytic `.backward()`.
 
 import importlib.util
 import os
-import value
+
 import pytest
 
 # --- import the student's code.py living next to this test file ---
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SPEC = importlib.util.spec_from_file_location(
-    "stage_01_code", os.path.join(_HERE, "value.py")
+    "stage_01_code", os.path.join(_HERE, "code.py")
 )
 _MOD = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MOD)
